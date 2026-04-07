@@ -1,4 +1,4 @@
-import { db } from "../src/lib/db/turso";
+import { db } from "../src/lib/turso";
 import { artworks } from "../src/lib/db/schema";
 
 const artworkData = [

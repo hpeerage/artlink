@@ -8,10 +8,30 @@
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
-  --color-primary: #0057FF; /* Link Blue */
-  --color-secondary: #00C896; /* Artist Green */
+  --color-primary: #00CFBB;
+  --color-primary-foreground: #FFFFFF;
+  --color-secondary: #00A693;
   --font-sans: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   --font-accent: "Montserrat", sans-serif;
+}
+
+/* Ensure primary color takes effect even if theme inline lags */
+@layer base {
+  .text-primary {
+    color: #00CFBB !important;
+  }
+  .bg-primary {
+    background-color: #00CFBB !important;
+  }
+  .border-primary {
+    border-color: #00CFBB !important;
+  }
+  .hover\:text-primary:hover {
+    color: #00CFBB !important;
+  }
+  .hover\:bg-primary:hover {
+    background-color: #00CFBB !important;
+  }
 }
 
 @media (prefers-color-scheme: dark) {

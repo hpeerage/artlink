@@ -12,7 +12,7 @@ export const metadata: Metadata = {
   title: "ArtLink | 실물 크기 AR 작품 체험 및 렌탈",
   description: "2D 작품 이미지를 3D 액자에 매핑하여 1:1 스케일로 AR 체험하고 정기 렌탈하는 아트 플랫폼",
   icons: {
-    icon: "/artlink/logo.svg",
+    icon: "/logo.svg",
   },
 };
 

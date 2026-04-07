@@ -28,7 +28,7 @@ export default function SignupPage() {
     }
 
     try {
-      const res = await fetch('/artlink/api/auth/register', { // Added basePath /artlink
+      const res = await fetch('/api/auth/register', { // Added basePath /artlink
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -84,7 +84,7 @@ export default function SignupPage() {
           </Link>
 
           <div className="mb-12">
-            <img src="/artlink/logo.svg" alt="ArtLink Logo" className="h-10 w-auto mb-8" />
+            <img src="/logo.svg" alt="ArtLink Logo" className="h-10 w-auto mb-8" />
             <h2 className="text-3xl font-black text-white tracking-tighter mb-2">Create Account</h2>
             <p className="text-gray-500 font-bold tracking-tight">아트링크의 새로운 회원이 되어보세요.</p>
           </div>

@@ -35,7 +35,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
     const checkSubscription = async () => {
       setIsLoadingSub(true);
       try {
-        const response = await fetch('/artlink/api/my/subscriptions');
+        const response = await fetch('/api/my/subscriptions');
         if (response.ok) {
           const subscriptions = await response.json();
           const hasActiveSub = subscriptions.some(

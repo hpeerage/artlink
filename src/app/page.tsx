@@ -16,7 +16,7 @@ export default function Home() {
       <nav className="fixed top-0 w-full z-[100] bg-white/70 backdrop-blur-xl border-b border-gray-50 px-8 py-5">
         <div className="container mx-auto flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="/artlink/logo.svg" alt="ArtLink Logo" className="h-10 w-auto transition-transform group-hover:scale-105" />
+            <img src="/logo.svg" alt="ArtLink Logo" className="h-10 w-auto transition-transform group-hover:scale-105" />
           </Link>
           <div className="hidden lg:flex items-center gap-12 text-[11px] font-black uppercase tracking-[0.2em] text-gray-400">
             <Link href="/explore" className="text-gray-900 hover:text-primary transition-colors">Explore</Link>
@@ -32,7 +32,7 @@ export default function Home() {
                   <span className="text-xs font-black text-gray-900">{session?.user?.name || 'Artist'}</span>
                 </div>
                 <button 
-                  onClick={() => signOut({ callbackUrl: "/artlink" })}
+                  onClick={() => signOut({ callbackUrl: "/" })}
                   className="bg-gray-100 text-gray-500 p-3 rounded-2xl hover:bg-red-50 hover:text-red-500 transition-all border border-gray-200 hover:border-red-100"
                 >
                   <LogOut className="h-4 w-4" />
@@ -207,7 +207,7 @@ export default function Home() {
         <div className="container mx-auto">
           <div className="flex flex-col md:flex-row justify-between gap-20 items-start mb-20">
             <div>
-              <img src="/artlink/logo.svg" alt="ArtLink Logo" className="h-12 w-auto mb-8 opacity-80 hover:opacity-100 transition-opacity" />
+              <img src="/logo.svg" alt="ArtLink Logo" className="h-12 w-auto mb-8 opacity-80 hover:opacity-100 transition-opacity" />
               <p className="text-gray-400 max-w-sm font-medium">
                 예술과 기술의 결합으로 당신의 공간에 새로운 영감을 링크합니다. 
                 가장 쉬운 WebAR 기반 작품 전시 및 렌탈 서비스.

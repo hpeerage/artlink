@@ -25,7 +25,7 @@ const ExplorePage = () => {
     const fetchArtworks = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('/artlink/api/artworks');
+        const response = await fetch('/api/artworks');
         if (!response.ok) throw new Error('Failed to fetch');
         const data = await response.json();
         setArtworks(data || []);
@@ -56,7 +56,7 @@ const ExplorePage = () => {
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-100 px-6 py-4">
         <div className="container mx-auto flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="/artlink/logo.svg" alt="ArtLink Logo" className="h-8 w-auto transition-transform group-hover:scale-105" />
+            <img src="/logo.svg" alt="ArtLink Logo" className="h-8 w-auto transition-transform group-hover:scale-105" />
           </Link>
           <div className="hidden md:flex gap-8 font-bold text-sm text-gray-600 uppercase tracking-widest">
             <Link href="/explore" className="text-primary">Explore</Link>
@@ -71,7 +71,7 @@ const ExplorePage = () => {
                   Welcome, <span className="text-gray-900">{session?.user?.name || 'Artist'}</span>
                 </span>
                 <button 
-                  onClick={() => signOut({ callbackUrl: "/artlink" })}
+                  onClick={() => signOut({ callbackUrl: "/" })}
                   className="bg-gray-100 text-gray-600 px-4 py-2 rounded-xl text-xs font-bold hover:bg-gray-200 transition-colors"
                 >
                   Logout

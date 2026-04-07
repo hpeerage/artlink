@@ -23,7 +23,7 @@ const ArtistDashboard = () => {
     const fetchArtworks = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('/artlink/api/artworks');
+        const response = await fetch('/api/artworks');
         if (!response.ok) throw new Error('Failed to fetch');
         const data = await response.json();
         setArtworks(data || []);
@@ -43,7 +43,7 @@ const ArtistDashboard = () => {
       <aside className="w-64 bg-gray-900 text-white flex flex-col fixed inset-y-0">
         <div className="p-8">
           <Link href="/" className="flex items-center gap-2 group mb-6">
-            <img src="/artlink/logo.svg" alt="ArtLink Logo" className="h-8 w-auto transition-transform group-hover:scale-105" />
+            <img src="/logo.svg" alt="ArtLink Logo" className="h-8 w-auto transition-transform group-hover:scale-105" />
             <span className="text-[10px] bg-primary text-white px-2 py-0.5 rounded uppercase tracking-widest font-black">Artist</span>
           </Link>
         </div>

@@ -76,7 +76,7 @@ function LoginContent() {
           </Link>
 
           <div className="mb-12">
-            <img src="/artlink/logo.svg" alt="ArtLink Logo" className="h-10 w-auto mb-8" />
+            <img src="/logo.svg" alt="ArtLink Logo" className="h-10 w-auto mb-8" />
             <h2 className="text-3xl font-black text-white tracking-tighter mb-2">Welcome Back</h2>
             <p className="text-gray-500 font-bold tracking-tight">아트링크 계정으로 로그인해 주세요.</p>
           </div>

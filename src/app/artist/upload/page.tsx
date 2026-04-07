@@ -48,7 +48,7 @@ const ArtworkUploadPage = () => {
       const publicUrl = previewUrl || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5';
 
       // 2. 새로운 Prisma API를 호출하여 SQLite에 메타데이터 저장
-      const response = await fetch('/artlink/api/artworks', {
+      const response = await fetch('/api/artworks', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

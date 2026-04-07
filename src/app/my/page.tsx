@@ -23,7 +23,7 @@ const MyPage = () => {
     const fetchSubscription = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch('/artlink/api/my/subscriptions');
+        const response = await fetch('/api/my/subscriptions');
         if (response.ok) {
           const data = await response.json();
           // 가장 최근 구독 대상을 표시 (현재 환경 가정)
@@ -48,11 +48,11 @@ const MyPage = () => {
       <nav className="bg-white border-b border-gray-100 px-8 py-5">
         <div className="container mx-auto flex justify-between items-center">
           <Link href="/" className="flex items-center gap-2 group">
-            <img src="/artlink/logo.svg" alt="ArtLink Logo" className="h-8 w-auto transition-transform group-hover:scale-105" />
+            <img src="/logo.svg" alt="ArtLink Logo" className="h-8 w-auto transition-transform group-hover:scale-105" />
           </Link>
           <div className="flex items-center gap-6">
             <button 
-              onClick={() => signOut({ callbackUrl: "/artlink" })}
+              onClick={() => signOut({ callbackUrl: "/" })}
               className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 transition-colors"
             >
               Logout

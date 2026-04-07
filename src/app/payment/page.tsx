@@ -101,7 +101,7 @@ const PaymentTestPage = () => {
             </ul>
             
             <div className="mt-10 pt-6 border-t border-gray-50">
-              <Link href="/test/ar" className="text-sm text-gray-400 flex items-center gap-2 hover:text-primary transition-colors">
+              <Link href="/ar" className="text-sm text-gray-400 flex items-center gap-2 hover:text-primary transition-colors">
                 <ArrowLeft className="h-4 w-4" />
                 AR 체험 테스트로 돌아가기
               </Link>

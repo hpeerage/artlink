@@ -78,7 +78,7 @@ export default function Home() {
                   <ArrowRight className="h-6 w-6" />
                 </Link>
                 <Link
-                  href="/test/ar"
+                  href="/ar"
                   className="inline-flex items-center gap-3 rounded-[2rem] bg-gray-50 border border-gray-100 px-10 py-5 text-lg font-black text-gray-900 transition-all hover:bg-white hover:border-primary/30"
                 >
                   AR 체험기술 보기

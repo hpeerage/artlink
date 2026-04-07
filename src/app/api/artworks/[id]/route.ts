@@ -5,11 +5,12 @@ import { eq, and } from 'drizzle-orm';
 
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const artwork = await db.query.artworks.findFirst({
-      where: eq(artworks.id, params.id),
+      where: eq(artworks.id, id),
       with: {
         subscriptions: {
           where: (subscriptions, { eq }) => eq(subscriptions.status, 'active'),

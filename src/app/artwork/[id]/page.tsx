@@ -7,9 +7,10 @@ import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
 
-export default async function ArtworkPage({ params }: { params: { id: string } }) {
+export default async function ArtworkPage({ params }: { params: Promise<{ id: string }> }) {
+  const { id } = await params;
   const artwork = await db.query.artworks.findFirst({
-    where: eq(artworks.id, params.id),
+    where: eq(artworks.id, id),
   });
 
   if (!artwork) {

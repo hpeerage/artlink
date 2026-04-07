@@ -59,6 +59,7 @@ const PaymentTestPage = () => {
           {/* 결제 폼 */}
           <section className="w-full md:w-1/2">
             <BillingKeyForm 
+              artworkId="test-artwork-id"
               artworkTitle="정선 아리아 블루 (Original #08)"
               monthlyAmount={35000}
               onSuccess={handleSuccess}

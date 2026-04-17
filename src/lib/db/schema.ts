@@ -25,6 +25,7 @@ export const artworksRelations = relations(artworks, ({ one, many }) => ({
     references: [users.id],
   }),
   subscriptions: many(subscriptions),
+  favorites: many(favorites),
 }));
 
 // 2. 사용자 테이블 (Users)
@@ -44,7 +45,29 @@ export const usersRelations = relations(users, ({ many }) => ({
   payments: many(payments),
   accounts: many(accounts),
   sessions: many(sessions),
+  favorites: many(favorites),
 }));
+
+// 5. 관심 작품 (Favorites)
+export const favorites = sqliteTable("favorites", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id),
+  artworkId: text("artwork_id").notNull().references(() => artworks.id),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const favoritesRelations = relations(favorites, ({ one }) => ({
+  user: one(users, {
+    fields: [favorites.userId],
+    references: [users.id],
+  }),
+  artwork: one(artworks, {
+    fields: [favorites.artworkId],
+    references: [artworks.id],
+  }),
+}));
+
+// (이후 verificationTokens 등 기존 코드 유지)
 
 // 3. 정기 구독/렌탈 테이블 (Subscriptions)
 export const subscriptions = sqliteTable("subscriptions", {

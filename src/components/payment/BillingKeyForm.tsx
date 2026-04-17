@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import * as PortOne from '@portone/browser-sdk/v2';
 import { CreditCard, ShieldCheck, AlertCircle, Loader2 } from 'lucide-react';
 import { PORTONE_STORE_ID, PORTONE_CHANNEL_KEY } from '@/lib/portone';
+import { useSession } from 'next-auth/react';
 
 interface BillingKeyFormProps {
   artworkId: string;
@@ -20,16 +21,22 @@ const BillingKeyForm: React.FC<BillingKeyFormProps> = ({
   onSuccess,
   onFail,
 }) => {
+  const { data: session, status } = useSession();
   const [isProcessing, setIsProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const handleIssueBillingKey = async () => {
+    if (status !== 'authenticated' || !session?.user) {
+      setError('로그인이 필요한 서비스입니다.');
+      return;
+    }
+
     setIsProcessing(true);
     setError(null);
 
     try {
-      // 1. 빌링키 발급 요청 (고객 식별자 customer_uid 생성이 핵심)
-      const customerId = `guest_${Date.now()}`; // 실제로는 로그인된 유저 ID 사용
+      // 1. 빌링키 발급 요청 (고객 식별자 customerId 사용)
+      const customerId = (session.user as any).id || session.user.email;
       
       const response = await PortOne.requestIssueBillingKey({
         storeId: PORTONE_STORE_ID,
@@ -37,7 +44,9 @@ const BillingKeyForm: React.FC<BillingKeyFormProps> = ({
         billingKeyMethod: 'CARD', 
         issueName: `ArtLink 정기 렌탈: ${artworkTitle}`,
         customer: {
-          customerId: customerId,
+          customerId: String(customerId),
+          fullName: session.user.name || '',
+          email: session.user.email || '',
         },
       });
 

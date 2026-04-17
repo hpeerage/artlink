@@ -1,13 +1,21 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/turso';
 import { subscriptions } from '@/lib/db/schema';
-import { desc } from 'drizzle-orm';
+import { desc, eq } from 'drizzle-orm';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(request: NextRequest) {
   try {
-    // 실제 서비스에서는 auth context에서 user_id를 가져와야 함
-    // 현재는 테스트를 위해 전체 구독 내역을 반환하거나 특정 익명 ID를 사용
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const userId = (session.user as any).id;
+
     const results = await db.query.subscriptions.findMany({
+      where: eq(subscriptions.userId, userId),
       with: {
         artwork: true,
       },

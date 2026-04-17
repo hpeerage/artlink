@@ -80,16 +80,27 @@ const ArtLinkModelViewer: React.FC<ArtLinkModelViewerProps> = ({
       );
 
       if (frameMaterial) {
-        console.log('Frame material found. Applying:', frameType);
+        console.log('Frame material found. Applying high-fidelity params:', frameType);
+        const pbr = frameMaterial.pbrMetallicRoughness;
+        
         switch (frameType) {
           case 'wood':
-            frameMaterial.pbrMetallicRoughness.setBaseColorFactor([0.6, 0.4, 0.2, 1.0]); // Wood-like color
+            // 매트한 나무 질감
+            pbr.setBaseColorFactor([0.62, 0.45, 0.32, 1.0]); 
+            pbr.setRoughnessFactor(0.85);
+            pbr.setMetallicFactor(0.05);
             break;
           case 'white':
-            frameMaterial.pbrMetallicRoughness.setBaseColorFactor([1.0, 1.0, 1.0, 1.0]);
+            // 부드러운 화이트 광택
+            pbr.setBaseColorFactor([0.98, 0.98, 0.98, 1.0]);
+            pbr.setRoughnessFactor(0.4);
+            pbr.setMetallicFactor(0.1);
             break;
           case 'black':
-            frameMaterial.pbrMetallicRoughness.setBaseColorFactor([0.1, 0.1, 0.1, 1.0]);
+            // 세련된 블랙 반사광
+            pbr.setBaseColorFactor([0.05, 0.05, 0.05, 1.0]);
+            pbr.setRoughnessFactor(0.3);
+            pbr.setMetallicFactor(0.2);
             break;
         }
       }
@@ -111,12 +122,12 @@ const ArtLinkModelViewer: React.FC<ArtLinkModelViewerProps> = ({
   }, [textureUrl, frameType]);
 
   return (
-    <div style={{ width, height, position: 'relative' }} className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-200">
+    <div style={{ width, height, position: 'relative' }} className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-inner">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-50 z-10">
+        <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 backdrop-blur-sm z-10 transition-opacity">
           <div className="flex flex-col items-center">
             <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-            <p className="mt-4 text-sm text-gray-500 font-sans">작품을 불러오는 중...</p>
+            <p className="mt-4 text-xs font-black tracking-widest text-gray-400 uppercase">Loading Artwork</p>
           </div>
         </div>
       )}
@@ -126,11 +137,15 @@ const ArtLinkModelViewer: React.FC<ArtLinkModelViewerProps> = ({
         alt={alt}
         ar
         ar-modes="scene-viewer quick-look webxr"
-        ar-scale="fixed" // 1:1 스케일 강제
+        ar-scale="fixed"
         camera-controls
         touch-action="pan-y"
-        shadow-intensity="1"
-        exposure="1"
+        shadow-intensity="1.5"
+        shadow-softness="0.5"
+        exposure="1.2"
+        environment-image="neutral"
+        auto-rotate
+        rotation-per-second="30deg"
         style={{ width: '100%', height: '100%', backgroundColor: 'transparent' }}
       >
         <button

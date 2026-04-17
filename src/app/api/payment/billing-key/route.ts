@@ -1,26 +1,34 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/turso';
 import { subscriptions, payments } from '@/lib/db/schema';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
 /**
  * 빌링키 발급 후 서버 등록 및 첫 결제 처리
  */
 export async function POST(request: NextRequest) {
   try {
-    const { billingKey, customerId, artworkId, amount } = await request.json();
+    const session = await getServerSession(authOptions);
+    if (!session || !session.user) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
 
-    if (!billingKey || !customerId || !artworkId) {
+    const { billingKey, artworkId, amount } = await request.json();
+    const userId = (session.user as any).id;
+
+    if (!billingKey || !artworkId || !amount) {
       return NextResponse.json(
         { error: 'Missing required parameters' },
         { status: 400 }
       );
     }
 
-    console.log('Received billing key for artwork:', artworkId, 'key:', billingKey);
+    console.log('Registering subscription for user:', userId, 'artwork:', artworkId);
 
     // 1. Drizzle를 통해 Turso에 저장
     const [newSubscription] = await db.insert(subscriptions).values({
-      userId: String(customerId),
+      userId: userId,
       artworkId: String(artworkId),
       billingKey: String(billingKey),
       status: 'active',

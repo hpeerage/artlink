@@ -7,6 +7,8 @@ import BillingKeyForm from '@/components/payment/BillingKeyForm';
 import { ArrowLeft, Box, ShieldCheck, Share2, Info, CheckCircle2, X } from 'lucide-react';
 import Link from 'next/link';
 
+import { useSession, signIn } from 'next-auth/react';
+
 interface Artwork {
   id: string;
   title: string;
@@ -25,35 +27,119 @@ interface ArtworkDetailClientProps {
 
 const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) => {
   const router = useRouter();
+  const { data: session } = useSession();
   const [showPayment, setShowPayment] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoadingSub, setIsLoadingSub] = useState(true);
+  const [isFavorited, setIsFavorited] = useState(false);
+  const [isTogglingFav, setIsTogglingFav] = useState(false);
   const [frameType, setFrameType] = useState<'wood' | 'white' | 'black'>('wood');
   const [snapshot, setSnapshot] = useState<string | null>(null);
 
   React.useEffect(() => {
-    const checkSubscription = async () => {
+    const checkStatus = async () => {
+      if (!session) {
+        setIsLoadingSub(false);
+        return;
+      }
+
       setIsLoadingSub(true);
       try {
-        const response = await fetch('/api/my/subscriptions');
-        if (response.ok) {
-          const subscriptions = await response.json();
+        // 1. 구독 확인
+        const subRes = await fetch('/api/my/subscriptions');
+        if (subRes.ok) {
+          const subscriptions = await subRes.json();
           const hasActiveSub = subscriptions.some(
-            (sub: any) => sub.artwork_id === artwork.id && sub.status === 'active'
+            (sub: any) => sub.artworkId === artwork.id && sub.status === 'active'
           );
-          if (hasActiveSub) {
-            setIsSubscribed(true);
-          }
+          if (hasActiveSub) setIsSubscribed(true);
+        }
+
+        // 2. 찜하기 확인
+        const favRes = await fetch('/api/my/favorites');
+        if (favRes.ok) {
+          const favorites = await favRes.json();
+          const isFav = favorites.some((f: any) => f.artworkId === artwork.id);
+          setIsFavorited(isFav);
         }
       } catch (err) {
-        console.error('Error checking subscription:', err);
+        console.error('Error checking status:', err);
       } finally {
         setIsLoadingSub(false);
       }
     };
 
-    checkSubscription();
-  }, [artwork.id]);
+    checkStatus();
+  }, [artwork.id, session]);
+
+  const handleFavoriteClick = async () => {
+    if (!session) {
+      if (confirm('관심 작품 등록을 위해 로그인이 필요합니다.')) signIn();
+      return;
+    }
+
+    if (isTogglingFav) return;
+    setIsTogglingFav(true);
+
+    try {
+      const res = await fetch('/api/my/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artworkId: artwork.id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsFavorited(data.active);
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    } finally {
+      setIsTogglingFav(false);
+    }
+  };
+
+  const handleShare = async (platform?: string) => {
+    if (!snapshot) return;
+
+    // Web Share API 지원 여부 확인
+    if (navigator.share && /mobile|android|iphone/i.test(navigator.userAgent)) {
+      try {
+        // Base64를 Blob으로 변환
+        const response = await fetch(snapshot);
+        const blob = await response.blob();
+        const file = new File([blob], `artlink-snapshot-${artwork.title}.png`, { type: 'image/png' });
+
+        await navigator.share({
+          files: [file],
+          title: `ArtLink: ${artwork.title}`,
+          text: `${artwork.artist} 작가의 작품을 내 공간에 배치해 보았습니다. #ArtLink #AR커머스`,
+        });
+        return;
+      } catch (err) {
+        console.error('Sharing failed:', err);
+      }
+    }
+
+    // 데스크탑이나 미지원 시 기본 동작 (다운로드 등)
+    if (platform === 'save') {
+      const link = document.createElement('a');
+      link.href = snapshot;
+      link.download = `artlink-snapshot-${artwork.title}.png`;
+      link.click();
+    } else {
+      alert('스냅샷 이미지를 저장한 후 SNS에 공유해 주세요!');
+    }
+  };
+
+  const handleRentalClick = () => {
+    if (!session) {
+      if (confirm('렌탈 신청을 위해 로그인이 필요합니다. 로그인 페이지로 이동할까요?')) {
+        signIn();
+      }
+      return;
+    }
+    setShowPayment(true);
+  };
 
   return (
     <div className="min-h-screen bg-white">
@@ -65,6 +151,17 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
             <span>BACK</span>
           </button>
           <div className="flex gap-4">
+            <button 
+              onClick={handleFavoriteClick}
+              disabled={isTogglingFav}
+              className={`p-2 border rounded-xl transition-all ${
+                isFavorited 
+                ? 'bg-red-50 border-red-100 text-red-500 shadow-sm' 
+                : 'border-gray-100 text-gray-400 hover:bg-gray-50'
+              }`}
+            >
+              <Heart className={`h-5 w-5 ${isFavorited ? 'fill-current' : ''}`} />
+            </button>
             <button className="p-2 border border-gray-100 rounded-xl hover:bg-gray-50">
               <Share2 className="h-5 w-5 text-gray-400" />
             </button>
@@ -114,21 +211,26 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Select Frame Material</p>
                   <div className="flex gap-3">
                     {[
-                      { id: 'wood', label: 'Classic Wood', color: '#8B4513' },
-                      { id: 'white', label: 'Modern White', color: '#FFFFFF' },
-                      { id: 'black', label: 'Sleek Black', color: '#000000' },
+                      { id: 'wood', label: 'Classic Wood', color: '#6B4423', effect: 'shadow-inner' },
+                      { id: 'white', label: 'Modern White', color: '#FFFFFF', effect: 'bg-gradient-to-br from-white to-gray-100' },
+                      { id: 'black', label: 'Sleek Black', color: '#1A1A1A', effect: 'bg-gradient-to-br from-gray-800 to-black' },
                     ].map((frame) => (
                       <button
                         key={frame.id}
                         onClick={() => setFrameType(frame.id as any)}
-                        className={`flex-1 flex flex-col items-center gap-2 p-3 rounded-2xl border-2 transition-all ${
+                        className={`flex-1 flex flex-col items-center gap-2 p-4 rounded-3xl border-2 transition-all duration-300 ${
                           frameType === frame.id 
-                          ? 'border-primary bg-white shadow-lg' 
-                          : 'border-transparent bg-gray-200/50 hover:bg-gray-200'
+                          ? 'border-primary bg-white shadow-xl -translate-y-1' 
+                          : 'border-transparent bg-gray-50 hover:bg-white hover:shadow-md'
                         }`}
                       >
-                        <div className="w-6 h-6 rounded-full border border-gray-100" style={{ backgroundColor: frame.color }}></div>
-                        <span className="text-[10px] font-bold">{frame.label}</span>
+                        <div 
+                          className={`w-10 h-10 rounded-full border border-gray-100 shadow-sm mb-1 ${frame.effect}`} 
+                          style={{ backgroundColor: frame.color }}
+                        ></div>
+                        <span className={`text-[10px] font-black uppercase tracking-tighter ${frameType === frame.id ? 'text-primary' : 'text-gray-400'}`}>
+                          {frame.label}
+                        </span>
                       </button>
                     ))}
                   </div>
@@ -149,7 +251,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
               {!isSubscribed ? (
                 <div className="space-y-4">
                   <button 
-                    onClick={() => setShowPayment(true)}
+                    onClick={handleRentalClick}
                     className="w-full bg-primary text-white py-6 rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 shadow-2xl shadow-primary/30 transition-all hover:bg-blue-700 hover:-translate-y-1"
                   >
                     <ShieldCheck className="h-6 w-6" />
@@ -276,28 +378,33 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
               <p className="text-gray-400 text-sm mb-8 font-medium italic">당신의 예술적 감각이 닿은 공간은 어떤 모습인가요?</p>
               
               <div className="grid grid-cols-3 gap-4">
-                <button className="flex flex-col items-center gap-3 p-6 rounded-3xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-xl transition-all group">
+                <button 
+                  onClick={() => handleShare('instagram')}
+                  className="flex flex-col items-center gap-3 p-6 rounded-3xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-xl transition-all group"
+                >
                    <div className="w-12 h-12 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                      <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.332 3.608 1.308.975.975 1.247 2.242 1.308 3.607.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.061 1.365-.333 2.633-1.308 3.608-.975.975-2.242 1.247-3.607 1.308-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.366-.061-2.633-.333-3.608-1.308-.975-.975-1.247-2.242-1.308-3.607-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.061-1.365.333-2.633 1.308-3.608.975-.975 2.242-1.247 3.607-1.308 1.266-.058 1.646-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-1.352.062-2.316.32-3.138 1.241-.822.822-1.08 1.786-1.142 3.138-.058 1.28-.072 1.688-.072 4.947s.014 3.667.072 4.947c.062 1.352.32 2.316 1.241 3.138.822.822 1.786 1.08 3.138 1.142 1.28.058 1.688.072 4.947.072s3.667-.014 4.947-.072c1.352-.062 2.316-.32 3.138-1.241.822-.822 1.08-1.786 1.142-3.138.058-1.28.072-1.688.072-4.947s-.014-3.667-.072-4.947c-.062-1.352-.32-2.316-1.241-3.138-.822-.822-1.786-1.08-3.138-1.142-1.28-.058-1.688-.072-4.947-.072zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
                    </div>
                    <span className="text-[10px] font-black tracking-widest text-gray-500 uppercase">Instagram</span>
                 </button>
-                <button className="flex flex-col items-center gap-3 p-6 rounded-3xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-xl transition-all group">
+                <button 
+                  onClick={() => handleShare('kakao')}
+                  className="flex flex-col items-center gap-3 p-6 rounded-3xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-xl transition-all group"
+                >
                    <div className="w-12 h-12 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                      <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.707 4.8 4.27 6.107-.175.665-.63 2.392-.72 2.747-.11.431.155.426.326.31.135-.092 2.148-1.46 3.003-2.042.433.06.877.093 1.121.093 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/></svg>
                    </div>
                    <span className="text-[10px] font-black tracking-widest text-gray-500 uppercase">KakaoTalk</span>
                 </button>
-                <a 
-                  href={snapshot} 
-                  download={`artlink-snapshot-${artwork.title}.png`}
+                <button 
+                  onClick={() => handleShare('save')}
                   className="flex flex-col items-center gap-3 p-6 rounded-3xl bg-gray-900 border border-gray-900 hover:bg-primary transition-all group text-white"
                 >
                    <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4-4v12" /></svg>
                    </div>
                    <span className="text-[10px] font-black tracking-widest uppercase">Save Image</span>
-                </a>
+                </button>
               </div>
             </div>
           </div>

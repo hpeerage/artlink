@@ -29,6 +29,12 @@ const Header = () => {
             Explore
           </Link>
           <Link 
+            href="/community" 
+            className={`hover:text-primary transition-colors ${pathname === '/community' ? 'text-primary' : ''}`}
+          >
+            Community
+          </Link>
+          <Link 
             href="/ar" 
             className={`hover:text-primary transition-colors ${pathname === '/ar' ? 'text-primary' : ''}`}
           >

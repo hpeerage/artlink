@@ -1,13 +1,26 @@
 'use client';
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import ArtLinkModelViewer from '@/components/ar/ModelViewer';
 import BillingKeyForm from '@/components/payment/BillingKeyForm';
-import { ArrowLeft, Box, ShieldCheck, Share2, Info, CheckCircle2, X } from 'lucide-react';
+import { 
+  ArrowLeft, 
+  Box, 
+  ShieldCheck, 
+  Share2, 
+  Info, 
+  CheckCircle2, 
+  X, 
+  Heart, 
+  MessageSquare, 
+  Loader2,
+  ArrowRight
+} from 'lucide-react';
 import Link from 'next/link';
-
 import { useSession, signIn } from 'next-auth/react';
+import Header from '@/components/common/Header';
+import ChatWindow from '@/components/common/ChatWindow';
 
 interface Artwork {
   id: string;
@@ -19,6 +32,9 @@ interface Artwork {
   image_url: string;
   model_url?: string;
   description: string;
+  widthMm: number;
+  heightMm: number;
+  userId?: string;
 }
 
 interface ArtworkDetailClientProps {
@@ -35,37 +51,54 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
   const [isTogglingFav, setIsTogglingFav] = useState(false);
   const [frameType, setFrameType] = useState<'wood' | 'white' | 'black'>('wood');
   const [snapshot, setSnapshot] = useState<string | null>(null);
+  const [rentalType, setRentalType] = useState<'rental' | 'buy'>('rental');
 
-  React.useEffect(() => {
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [isLoadingReviews, setIsLoadingReviews] = useState(true);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+
+  useEffect(() => {
     const checkStatus = async () => {
       if (!session) {
         setIsLoadingSub(false);
-        return;
+      } else {
+        setIsLoadingSub(true);
+        try {
+          // 1. 구독 확인
+          const subRes = await fetch('/api/my/subscriptions');
+          if (subRes.ok) {
+            const subscriptions = await subRes.json();
+            const hasActiveSub = subscriptions.some(
+              (sub: any) => sub.artworkId === artwork.id && sub.status === 'active'
+            );
+            if (hasActiveSub) setIsSubscribed(true);
+          }
+
+          // 2. 찜하기 확인
+          const favRes = await fetch('/api/my/favorites');
+          if (favRes.ok) {
+            const favorites = await favRes.json();
+            const isFav = favorites.some((f: any) => f.artworkId === artwork.id);
+            setIsFavorited(isFav);
+          }
+        } catch (err) {
+          console.error('Error checking status:', err);
+        } finally {
+          setIsLoadingSub(false);
+        }
       }
 
-      setIsLoadingSub(true);
+      // 3. 리뷰 데이터 로드 (로그인 여부와 상관없이)
       try {
-        // 1. 구독 확인
-        const subRes = await fetch('/api/my/subscriptions');
-        if (subRes.ok) {
-          const subscriptions = await subRes.json();
-          const hasActiveSub = subscriptions.some(
-            (sub: any) => sub.artworkId === artwork.id && sub.status === 'active'
-          );
-          if (hasActiveSub) setIsSubscribed(true);
-        }
-
-        // 2. 찜하기 확인
-        const favRes = await fetch('/api/my/favorites');
-        if (favRes.ok) {
-          const favorites = await favRes.json();
-          const isFav = favorites.some((f: any) => f.artworkId === artwork.id);
-          setIsFavorited(isFav);
+        const revRes = await fetch(`/api/reviews?artworkId=${artwork.id}`);
+        if (revRes.ok) {
+          const revData = await revRes.json();
+          setReviews(revData || []);
         }
       } catch (err) {
-        console.error('Error checking status:', err);
+        console.error('Error fetching reviews:', err);
       } finally {
-        setIsLoadingSub(false);
+        setIsLoadingReviews(false);
       }
     };
 
@@ -101,10 +134,8 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
   const handleShare = async (platform?: string) => {
     if (!snapshot) return;
 
-    // Web Share API 지원 여부 확인
     if (navigator.share && /mobile|android|iphone/i.test(navigator.userAgent)) {
       try {
-        // Base64를 Blob으로 변환
         const response = await fetch(snapshot);
         const blob = await response.blob();
         const file = new File([blob], `artlink-snapshot-${artwork.title}.png`, { type: 'image/png' });
@@ -120,7 +151,6 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
       }
     }
 
-    // 데스크탑이나 미지원 시 기본 동작 (다운로드 등)
     if (platform === 'save') {
       const link = document.createElement('a');
       link.href = snapshot;
@@ -143,67 +173,84 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
 
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md border-b border-gray-50 px-6 py-4">
-        <div className="container mx-auto flex justify-between items-center">
-          <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 font-bold hover:text-black transition-colors">
-            <ArrowLeft className="h-5 w-5" />
-            <span>BACK</span>
-          </button>
-          <div className="flex gap-4">
-            <button 
-              onClick={handleFavoriteClick}
-              disabled={isTogglingFav}
-              className={`p-2 border rounded-xl transition-all ${
-                isFavorited 
-                ? 'bg-red-50 border-red-100 text-red-500 shadow-sm' 
-                : 'border-gray-100 text-gray-400 hover:bg-gray-50'
-              }`}
-            >
-              <Heart className={`h-5 w-5 ${isFavorited ? 'fill-current' : ''}`} />
-            </button>
-            <button className="p-2 border border-gray-100 rounded-xl hover:bg-gray-50">
-              <Share2 className="h-5 w-5 text-gray-400" />
-            </button>
-            <button className="p-2 border border-gray-100 rounded-xl hover:bg-gray-50">
-              <Info className="h-5 w-5 text-gray-400" />
-            </button>
-          </div>
-        </div>
-      </nav>
+      <Header />
+      
+      <div className="container mx-auto px-6 pt-8 flex justify-between items-center">
+        <Link href="/explore" className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">
+          <ArrowLeft className="h-4 w-4" />
+          Back to list
+        </Link>
+      </div>
 
       <main className="container mx-auto px-6 py-12">
         <div className="grid lg:grid-cols-2 gap-16 items-start">
           {/* Left: AR Viewer */}
           <section className="sticky top-24">
-            <div className="mb-6 inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-2xl text-xs font-black tracking-widest uppercase mb-6">
+            <div className="mb-6 inline-flex items-center gap-2 bg-primary/10 text-primary px-4 py-2 rounded-2xl text-xs font-black tracking-widest uppercase">
               <Box className="h-4 w-4" />
               1:1 Real Scale WebAR
             </div>
-            <ArtLinkModelViewer 
-              modelUrl={artwork.model_url || 'https://modelviewer.dev/shared-assets/models/Astronaut.glb'} 
-              textureUrl={artwork.image_url} 
-              frameType={frameType}
-              onSnapshot={(data) => setSnapshot(data)}
-              height="700px"
-              alt={artwork.title}
-            />
-            <p className="mt-4 text-center text-sm text-gray-400 italic">
-              * 모바일에서 우측 하단의 [공간에 배치하기] 버튼을 클릭하여 AR을 체험해 보세요.
-            </p>
+            
+            <div className="w-full aspect-square bg-[#F8FAFC] rounded-[3rem] overflow-hidden relative shadow-inner group">
+              <ArtLinkModelViewer 
+                modelUrl={artwork.model_url || 'https://modelviewer.dev/shared-assets/models/Astronaut.glb'} 
+                textureUrl={artwork.image_url} 
+                frameType={frameType}
+                onSnapshot={(data) => setSnapshot(data)}
+                height="100%"
+                alt={artwork.title}
+              />
+              
+              <div className="absolute top-8 right-8 flex flex-col gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
+                 <button 
+                   onClick={handleFavoriteClick}
+                   className={`p-4 rounded-2xl shadow-xl transition-all ${isFavorited ? 'bg-red-500 text-white' : 'bg-white text-gray-400 hover:text-red-500'}`}
+                 >
+                    <Heart className={`h-6 w-6 ${isFavorited ? 'fill-current' : ''}`} />
+                 </button>
+                 <button 
+                   onClick={() => handleShare('save')}
+                   className="bg-white p-4 rounded-2xl shadow-xl text-gray-400 hover:text-primary transition-all"
+                 >
+                    <Share2 className="h-6 w-6" />
+                 </button>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-3 gap-4 mt-6">
+               {[
+                 { label: 'Width', value: `${artwork.widthMm}mm` },
+                 { label: 'Height', value: `${artwork.heightMm}mm` },
+                 { label: 'Format', value: '3D/AR Ready' }
+               ].map((spec, i) => (
+                 <div key={i} className="bg-gray-50 p-6 rounded-3xl text-center">
+                    <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{spec.label}</p>
+                    <p className="text-sm font-black text-gray-900">{spec.value}</p>
+                 </div>
+               ))}
+            </div>
           </section>
 
           {/* Right: Info & Purchase */}
           <section className="space-y-10">
             <div>
-              <div className="flex items-center gap-3 mb-4">
-                <span className="px-3 py-1 bg-gray-100 text-[10px] font-black text-gray-600 rounded-full">{artwork.category}</span>
-                <span className="text-secondary text-[10px] font-black uppercase tracking-tighter">● In Stock</span>
-              </div>
-              <h1 className="text-5xl font-black text-gray-900 mb-2 leading-tight">{artwork.title}</h1>
-              <p className="text-xl font-bold text-gray-400 mb-8 italic">{artwork.artist}</p>
+              <div className="flex items-center gap-4 mb-4">
+                  <span className="bg-primary/10 text-primary px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest">{artwork.category}</span>
+                  <div className="h-px flex-1 bg-gray-100"></div>
+               </div>
+               <h1 className="text-5xl font-black text-gray-900 leading-none mb-4 tracking-tighter">{artwork.title}</h1>
+               <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setIsChatOpen(true)}>
+                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center font-black text-gray-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                    {artwork.artist[0]}
+                  </div>
+                  <div>
+                    <p className="text-sm font-black text-gray-900 group-hover:text-primary transition-colors">{artwork.artist}</p>
+                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">작가에게 상담하기 →</p>
+                  </div>
+               </div>
+            </div>
               
-              <div className="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100 mb-10">
+            <div className="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100 mb-10">
                 <p className="text-gray-600 leading-relaxed text-lg mb-6">
                   {artwork.description}
                 </p>
@@ -211,9 +258,9 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                   <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Select Frame Material</p>
                   <div className="flex gap-3">
                     {[
-                      { id: 'wood', label: 'Classic Wood', color: '#6B4423', effect: 'shadow-inner' },
-                      { id: 'white', label: 'Modern White', color: '#FFFFFF', effect: 'bg-gradient-to-br from-white to-gray-100' },
-                      { id: 'black', label: 'Sleek Black', color: '#1A1A1A', effect: 'bg-gradient-to-br from-gray-800 to-black' },
+                      { id: 'wood', label: 'Classic Wood', color: '#6B4423' },
+                      { id: 'white', label: 'Modern White', color: '#FFFFFF' },
+                      { id: 'black', label: 'Sleek Black', color: '#1A1A1A' },
                     ].map((frame) => (
                       <button
                         key={frame.id}
@@ -225,7 +272,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                         }`}
                       >
                         <div 
-                          className={`w-10 h-10 rounded-full border border-gray-100 shadow-sm mb-1 ${frame.effect}`} 
+                          className="w-10 h-10 rounded-full border border-gray-100 shadow-sm mb-1" 
                           style={{ backgroundColor: frame.color }}
                         ></div>
                         <span className={`text-[10px] font-black uppercase tracking-tighter ${frameType === frame.id ? 'text-primary' : 'text-gray-400'}`}>
@@ -237,29 +284,34 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-6 mb-12">
-                <div className="p-6 bg-white border border-gray-100 rounded-[2rem] shadow-sm">
-                  <p className="text-[10px] font-black text-gray-400 uppercase mb-2 tracking-widest">일반 구매가</p>
-                  <p className="text-2xl font-black text-gray-900">₩{artwork.price_buy?.toLocaleString()}</p>
-                </div>
-                <div className="p-6 bg-primary/5 border border-primary/10 rounded-[2rem] shadow-sm">
-                  <p className="text-[10px] font-black text-primary uppercase mb-2 tracking-widest">정기 렌탈 (구독)</p>
-                  <p className="text-2xl font-black text-primary">₩{artwork.price_rental?.toLocaleString()}<span className="text-sm font-medium"> /월</span></p>
-                </div>
-              </div>
-
               {!isSubscribed ? (
-                <div className="space-y-4">
-                  <button 
-                    onClick={handleRentalClick}
-                    className="w-full bg-primary text-white py-6 rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 shadow-2xl shadow-primary/30 transition-all hover:bg-blue-700 hover:-translate-y-1"
-                  >
-                    <ShieldCheck className="h-6 w-6" />
-                    정기 렌탈 구독하기
-                  </button>
-                  <button className="w-full bg-gray-900 text-white py-6 rounded-[2rem] font-black text-xl flex items-center justify-center gap-3 transition-all hover:bg-black">
-                    즉시 구매하기
-                  </button>
+                <div className="space-y-6">
+                  <div className={`p-8 rounded-[2.5rem] border-2 transition-all cursor-pointer ${rentalType === 'rental' ? 'border-primary bg-primary/5 shadow-xl shadow-primary/10' : 'border-gray-50 bg-white hover:border-gray-100'}`} onClick={() => setRentalType('rental')}>
+                    <div className="flex justify-between items-center mb-4">
+                       <span className="text-[10px] font-black uppercase text-primary tracking-widest">Monthly Rental</span>
+                       {rentalType === 'rental' && <div className="w-5 h-5 bg-primary rounded-full flex items-center justify-center font-bold text-white text-[10px]">✓</div>}
+                    </div>
+                    <div className="flex items-baseline gap-1">
+                       <span className="text-3xl font-black text-gray-900">₩{artwork.price_rental?.toLocaleString()}</span>
+                       <span className="text-sm font-black text-gray-400 uppercase">/ Month</span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-4">
+                    <button 
+                      onClick={handleRentalClick}
+                      className="bg-gray-900 text-white py-6 rounded-[2rem] font-black text-sm hover:bg-primary transition-all active:scale-95 shadow-2xl shadow-gray-200"
+                    >
+                      정기 렌탈 신청하기
+                    </button>
+                    <button 
+                      onClick={() => setIsChatOpen(true)}
+                      className="bg-white border-2 border-gray-100 text-gray-900 py-6 rounded-[2rem] font-black text-sm hover:border-primary hover:text-primary transition-all active:scale-95 flex items-center justify-center gap-2"
+                    >
+                      <MessageSquare className="h-5 w-5" />
+                      작가 문의
+                    </button>
+                  </div>
                 </div>
               ) : (
                 <div className="p-8 bg-green-50 border border-green-100 rounded-[2.5rem] flex flex-col items-center text-center">
@@ -271,62 +323,114 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                   <Link href="/my" className="text-green-900 font-bold underline">구독 정보 확인하기</Link>
                 </div>
               )}
-            </div>
 
-            <section className="pt-10 border-t border-gray-100">
-              <h3 className="font-black text-gray-900 mb-6 uppercase tracking-widest text-xs flex items-center gap-2">
-                <div className="w-1 h-4 bg-primary"></div>
-                Service Comparison (Tab 7)
-              </h3>
-              <div className="overflow-hidden rounded-3xl border border-gray-100 shadow-sm mb-10 text-xs">
-                <table className="w-full text-left">
-                  <thead className="bg-gray-50 font-black text-gray-400 uppercase tracking-tighter">
-                    <tr>
-                      <th className="px-6 py-4">Benefit Items</th>
-                      <th className="px-6 py-4">Rental (Subscription)</th>
-                      <th className="px-6 py-4">Purchase (Sale)</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-gray-50 font-bold">
-                    <tr>
-                      <td className="px-6 py-4 text-gray-500">Initial Cost</td>
-                      <td className="px-6 py-4 text-primary">₩{artwork.price_rental?.toLocaleString()}</td>
-                      <td className="px-6 py-4">₩{artwork.price_buy?.toLocaleString()}</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-gray-500">Style Change</td>
-                      <td className="px-6 py-4 text-secondary">Free (Every 3 months)</td>
-                      <td className="px-6 py-4">N/A</td>
-                    </tr>
-                    <tr>
-                      <td className="px-6 py-4 text-gray-500">Maintenance</td>
-                      <td className="px-6 py-4 text-secondary">Professional Support</td>
-                      <td className="px-6 py-4">Self</td>
-                    </tr>
-                  </tbody>
-                </table>
-              </div>
-              
-              <div className="grid sm:grid-cols-2 gap-6">
-                {[
-                  { title: 'FREE Delivery', desc: '전국 무료 배송 및 전문가 설치 지원' },
-                  { title: 'Style Change', desc: '분기별 1회 작품 무상 교체 가능 (보험 가입 시)' },
-                ].map((item, i) => (
-                  <div key={i} className="flex gap-3">
-                    <div className="mt-1 h-1.5 w-1.5 rounded-full bg-secondary shrink-0"></div>
-                    <div>
-                      <h4 className="font-bold text-gray-900 text-sm mb-1">{item.title}</h4>
-                      <p className="text-xs text-gray-500">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </section>
+              <section className="pt-10 border-t border-gray-100">
+                <h3 className="font-black text-gray-900 mb-6 uppercase tracking-widest text-xs flex items-center gap-2">
+                  <div className="w-1 h-4 bg-primary"></div>
+                  Service Comparison
+                </h3>
+                <div className="overflow-hidden rounded-3xl border border-gray-100 shadow-sm mb-10 text-xs">
+                  <table className="w-full text-left">
+                    <thead className="bg-gray-50 font-black text-gray-400 uppercase tracking-tighter">
+                      <tr>
+                        <th className="px-6 py-4">Benefit Items</th>
+                        <th className="px-6 py-4">Rental</th>
+                        <th className="px-6 py-4">Purchase</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-50 font-bold">
+                      <tr>
+                        <td className="px-6 py-4 text-gray-500">Initial Cost</td>
+                        <td className="px-6 py-4 text-primary">₩{artwork.price_rental?.toLocaleString()}</td>
+                        <td className="px-6 py-4">₩{artwork.price_buy?.toLocaleString()}</td>
+                      </tr>
+                      <tr>
+                        <td className="px-6 py-4 text-gray-500">Style Change</td>
+                        <td className="px-6 py-4 text-secondary">Free (Every 3mo)</td>
+                        <td className="px-6 py-4">N/A</td>
+                      </tr>
+                      <tr>
+                        <td className="px-6 py-4 text-gray-500">Maintenance</td>
+                        <td className="px-6 py-4 text-secondary">Pro Support</td>
+                        <td className="px-6 py-4">Self</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </section>
           </section>
         </div>
       </main>
 
-      {/* Payment Modal */}
+      {/* Review Section */}
+      <section className="bg-gray-50/50 py-24 border-t border-gray-100">
+        <div className="container mx-auto px-6 max-w-5xl">
+          <div className="flex justify-between items-end mb-12">
+            <div>
+               <span className="text-[10px] font-black uppercase text-primary tracking-widest mb-2 block">Collector Reviews</span>
+               <h2 className="text-4xl font-black text-gray-900 tracking-tight">컬렉터들의 생생한 체험기</h2>
+            </div>
+            {reviews.length > 0 && (
+              <div className="text-right">
+                <p className="text-4xl font-black text-gray-900 mb-1">
+                  {(reviews.reduce((acc, r) => acc + r.rating, 0) / reviews.length).toFixed(1)}
+                </p>
+                <div className="flex gap-0.5 text-amber-400 justify-end mb-2">
+                  {[...Array(5)].map((_, i) => <Heart key={i} className="h-4 w-4 fill-current" />)}
+                </div>
+                <p className="text-xs font-bold text-gray-400">{reviews.length}개의 정성스러운 후기</p>
+              </div>
+            )}
+          </div>
+
+          {isLoadingReviews ? (
+            <div className="py-20 flex justify-center"><Loader2 className="h-8 w-8 animate-spin text-primary/30" /></div>
+          ) : reviews.length > 0 ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+              {reviews.map((rev) => (
+                <div key={rev.id} className="bg-white p-8 rounded-[2.5rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all group">
+                   <div className="flex items-center gap-4 mb-6">
+                      <div className="w-10 h-10 bg-gray-100 rounded-full flex items-center justify-center font-black text-gray-400">
+                        {rev.user?.name?.[0] || 'U'}
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-gray-900">{rev.user?.name || 'Anonymous'}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">Verified Collector</p>
+                      </div>
+                      <div className="ml-auto flex gap-0.5 text-amber-400">
+                        {[...Array(rev.rating)].map((_, i) => <Heart key={i} className="h-3 w-3 fill-current" />)}
+                      </div>
+                   </div>
+                   
+                   {rev.imageUrl && (
+                     <div className="aspect-video mb-6 rounded-2xl overflow-hidden bg-gray-100">
+                        <img src={rev.imageUrl} alt="Review" className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" />
+                     </div>
+                   )}
+                   
+                   <p className="text-sm text-gray-600 leading-relaxed font-medium italic">"{rev.comment}"</p>
+                   <p className="text-[10px] text-gray-300 mt-6 font-bold uppercase tracking-widest">{new Date(rev.createdAt).toLocaleDateString()}</p>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="bg-white p-20 rounded-[3rem] border border-gray-100 text-center text-gray-300">
+               <MessageSquare className="h-10 w-10 mx-auto mb-4 opacity-20" />
+               <p className="text-sm font-bold italic">아직 작성된 리뷰가 없습니다. 첫 번째 리뷰어가 되어보세요!</p>
+            </div>
+          )}
+        </div>
+      </section>
+
+      {/* Footer Section */}
+      <footer className="py-20 text-center border-t border-gray-50 bg-white">
+        <div className="text-2xl font-black tracking-tighter mb-4 opacity-20">
+          ART<span className="text-primary italic">LINK</span>
+        </div>
+        <p className="text-xs text-gray-400 font-bold">© 2026 ArtLink Platform. All rights reserved.</p>
+      </footer>
+
+      {/* Modals */}
       {showPayment && (
         <div className="fixed inset-0 z-[120] flex items-center justify-center px-6">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setShowPayment(false)}></div>
@@ -350,7 +454,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
         </div>
       )}
 
-      {/* Snapshot Preview Modal */}
+      {/* Snapshot Preview */}
       {snapshot && (
         <div className="fixed inset-0 z-[110] flex items-center justify-center px-6">
           <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={() => setSnapshot(null)}></div>
@@ -359,56 +463,30 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
               <img src={snapshot} alt="AR Snapshot" className="w-full h-full object-contain" />
               <div className="absolute top-6 right-6">
                  <button onClick={() => setSnapshot(null)} className="bg-white/20 hover:bg-white/40 backdrop-blur p-2 rounded-full text-white transition-all">
-                   <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                   <X className="h-6 w-6" />
                  </button>
               </div>
-              <div className="absolute bottom-6 left-6 right-6 flex justify-between items-end">
-                <div className="text-white">
-                  <p className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-1">My Virtual Gallery</p>
-                  <h3 className="text-xl font-black">{artwork.title}</h3>
-                </div>
-                <div className="text-right text-white/40 text-[10px] font-bold">
-                  Captured via ART<span className="text-primary italic">LINK</span>
-                </div>
-              </div>
             </div>
-            
             <div className="p-10 text-center">
               <h4 className="text-2xl font-black text-gray-900 mb-2">공간에 배치된 작품을 공유해 보세요!</h4>
-              <p className="text-gray-400 text-sm mb-8 font-medium italic">당신의 예술적 감각이 닿은 공간은 어떤 모습인가요?</p>
-              
-              <div className="grid grid-cols-3 gap-4">
-                <button 
-                  onClick={() => handleShare('instagram')}
-                  className="flex flex-col items-center gap-3 p-6 rounded-3xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-xl transition-all group"
-                >
-                   <div className="w-12 h-12 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 2.163c3.204 0 3.584.012 4.85.07 1.366.062 2.633.332 3.608 1.308.975.975 1.247 2.242 1.308 3.607.058 1.266.07 1.646.07 4.85s-.012 3.584-.07 4.85c-.061 1.365-.333 2.633-1.308 3.608-.975.975-2.242 1.247-3.607 1.308-1.266.058-1.646.07-4.85.07s-3.584-.012-4.85-.07c-1.366-.061-2.633-.333-3.608-1.308-.975-.975-1.247-2.242-1.308-3.607-.058-1.266-.07-1.646-.07-4.85s.012-3.584.07-4.85c.061-1.365.333-2.633 1.308-3.608.975-.975 2.242-1.247 3.607-1.308 1.266-.058 1.646-.07 4.85-.07zm0-2.163c-3.259 0-3.667.014-4.947.072-1.352.062-2.316.32-3.138 1.241-.822.822-1.08 1.786-1.142 3.138-.058 1.28-.072 1.688-.072 4.947s.014 3.667.072 4.947c.062 1.352.32 2.316 1.241 3.138.822.822 1.786 1.08 3.138 1.142 1.28.058 1.688.072 4.947.072s3.667-.014 4.947-.072c1.352-.062 2.316-.32 3.138-1.241.822-.822 1.08-1.786 1.142-3.138.058-1.28.072-1.688.072-4.947s-.014-3.667-.072-4.947c-.062-1.352-.32-2.316-1.241-3.138-.822-.822-1.786-1.08-3.138-1.142-1.28-.058-1.688-.072-4.947-.072zm0 5.838c-3.403 0-6.162 2.759-6.162 6.162s2.759 6.162 6.162 6.162 6.162-2.759 6.162-6.162-2.759-6.162-6.162-6.162zm0 10.162c-2.209 0-4-1.79-4-4 0-2.209 1.791-4 4-4s4 1.791 4 4c0 2.21-1.791 4-4 4zm6.406-11.845c-.796 0-1.441.645-1.441 1.44s.645 1.44 1.441 1.44c.795 0 1.439-.645 1.439-1.44s-.644-1.44-1.439-1.44z"/></svg>
-                   </div>
-                   <span className="text-[10px] font-black tracking-widest text-gray-500 uppercase">Instagram</span>
-                </button>
-                <button 
-                  onClick={() => handleShare('kakao')}
-                  className="flex flex-col items-center gap-3 p-6 rounded-3xl bg-gray-50 border border-gray-100 hover:bg-white hover:shadow-xl transition-all group"
-                >
-                   <div className="w-12 h-12 bg-yellow-50 text-yellow-600 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <svg className="h-6 w-6" fill="currentColor" viewBox="0 0 24 24"><path d="M12 3c-4.97 0-9 3.185-9 7.115 0 2.558 1.707 4.8 4.27 6.107-.175.665-.63 2.392-.72 2.747-.11.431.155.426.326.31.135-.092 2.148-1.46 3.003-2.042.433.06.877.093 1.121.093 4.97 0 9-3.185 9-7.115S16.97 3 12 3z"/></svg>
-                   </div>
-                   <span className="text-[10px] font-black tracking-widest text-gray-500 uppercase">KakaoTalk</span>
-                </button>
-                <button 
-                  onClick={() => handleShare('save')}
-                  className="flex flex-col items-center gap-3 p-6 rounded-3xl bg-gray-900 border border-gray-900 hover:bg-primary transition-all group text-white"
-                >
-                   <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center group-hover:scale-110 transition-transform">
-                     <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a2 2 0 002 2h12a2 2 0 002-2v-1m-4-4l-4 4m0 0l-4-4m4-4v12" /></svg>
-                   </div>
-                   <span className="text-[10px] font-black tracking-widest uppercase">Save Image</span>
-                </button>
-              </div>
+              <button 
+                onClick={() => handleShare('save')}
+                className="w-full bg-gray-900 text-white py-6 rounded-[2rem] font-black text-xl shadow-xl hover:bg-primary transition-all"
+              >
+                이미지 저장 및 공유하기
+              </button>
             </div>
           </div>
         </div>
+      )}
+
+      {/* Chat Window */}
+      {isChatOpen && artwork.userId && (
+        <ChatWindow 
+          otherUserId={artwork.userId} 
+          otherUserName={artwork.artist} 
+          onClose={() => setIsChatOpen(false)} 
+        />
       )}
     </div>
   );

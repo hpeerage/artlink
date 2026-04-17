@@ -89,20 +89,53 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
   }),
 }));
 
-// (이후 verificationTokens 등 기존 코드 유지)
+// 6. 알림 테이블 (Notifications)
+// ... (기존 코드 유지)
 
-// 3. 정기 구독/렌탈 테이블 (Subscriptions)
-export const subscriptions = sqliteTable("subscriptions", {
+// 7. 리뷰 테이블 (Reviews)
+export const reviews = sqliteTable("reviews", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
   userId: text("user_id").notNull().references(() => users.id),
   artworkId: text("artwork_id").notNull().references(() => artworks.id),
-  billingKey: text("billing_key").notNull(),
-  status: text("status").default("active").notNull(),
-  amount: real("amount").notNull(),
-  nextPaymentDate: text("next_payment_date").notNull(),
-  lastPaymentDate: text("last_payment_date"),
+  rating: integer("rating").default(5).notNull(),
+  comment: text("comment"),
+  imageUrl: text("image_url"), // AR 체험 스냅샷 연동용
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
+
+export const reviewsRelations = relations(reviews, ({ one }) => ({
+  user: one(users, {
+    fields: [reviews.userId],
+    references: [users.id],
+  }),
+  artwork: one(artworks, {
+    fields: [reviews.artworkId],
+    references: [artworks.id],
+  }),
+}));
+
+// 8. 1:1 메시지 테이블 (Messages)
+export const messages = sqliteTable("messages", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  senderId: text("sender_id").notNull().references(() => users.id),
+  receiverId: text("receiver_id").notNull().references(() => users.id),
+  content: text("content").notNull(),
+  isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const messagesRelations = relations(messages, ({ one }) => ({
+  sender: one(users, {
+    fields: [messages.senderId],
+    references: [users.id],
+    relationName: "sentMessages",
+  }),
+  receiver: one(users, {
+    fields: [messages.receiverId],
+    references: [users.id],
+    relationName: "receivedMessages",
+  }),
+}));
 
 export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   user: one(users, {

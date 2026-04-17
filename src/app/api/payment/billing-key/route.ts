@@ -27,7 +27,7 @@ export async function POST(request: NextRequest) {
     console.log('Registering subscription for user:', userId, 'artwork:', artworkId);
 
     // 1. Drizzle를 통해 Turso에 저장
-    const [newSubscription] = await db.insert(subscriptions).values({
+    const [newSubscription]: any = await db.insert(subscriptions).values({
       userId: userId,
       artworkId: String(artworkId),
       billingKey: String(billingKey),
@@ -39,12 +39,20 @@ export async function POST(request: NextRequest) {
     // 2. 결제 성공 로그 생성 (Payments 테이블)
     const paymentId = `rental_${Date.now()}`;
     await db.insert(payments).values({
-      userId: String(customerId),
+      userId: userId,
       amount: Number(amount),
       paymentType: 'rental',
-      status: 'completed',
+      status: 'paid',
       merchantUid: paymentId,
       transactionId: `tx_${Date.now()}`,
+    });
+
+    // 3. 실시간 알림 생성
+    await db.insert(notifications).values({
+      userId,
+      type: 'subscription',
+      message: `[구독 완료] 작품 정기 렌탈 구독이 시작되었습니다. 마이페이지에서 상세 내역을 확인하세요.`,
+      link: '/my',
     });
 
     return NextResponse.json({

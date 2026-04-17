@@ -2,8 +2,9 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Settings, CreditCard, Box, LogOut, ChevronRight, Bookmark, Loader2 } from 'lucide-react';
-import { useSession, signOut } from 'next-auth/react';
+import { User, Settings, CreditCard, Box, LogOut, ChevronRight, Bookmark, Loader2, Heart } from 'lucide-react';
+import { useSession } from 'next-auth/react';
+import Header from '@/components/common/Header';
 
 interface Artwork {
   id: string;
@@ -50,31 +51,11 @@ const MyPage = () => {
 
   const latestSub = subscriptions.length > 0 ? subscriptions[0] : null;
   const subscribedWork = latestSub?.artwork;
-  const userInitial = session?.user?.name?.[0]?.toUpperCase() || 'H';
   const userName = session?.user?.name || 'User';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <nav className="bg-white border-b border-gray-100 px-8 py-5">
-        <div className="container mx-auto flex justify-between items-center">
-          <Link href="/" className="flex items-center gap-2 group">
-             <div className="text-2xl font-black tracking-tighter group-hover:scale-105 transition-transform">
-                ART<span className="text-primary italic">LINK</span>
-             </div>
-          </Link>
-          <div className="flex items-center gap-6">
-            <button 
-              onClick={() => signOut({ callbackUrl: "/" })}
-              className="text-[10px] font-black uppercase tracking-widest text-gray-400 hover:text-red-500 transition-colors"
-            >
-              Logout
-            </button>
-            <div className="w-10 h-10 bg-primary/10 rounded-full flex items-center justify-center text-primary font-black shadow-inner">
-              {userInitial}
-            </div>
-          </div>
-        </div>
-      </nav>
+      <Header />
 
       <main className="container mx-auto px-6 py-12">
         <div className="grid lg:grid-cols-4 gap-12">

@@ -1,25 +1,54 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/lib/turso';
 import { artworks } from '@/lib/db/schema';
-import { eq, desc, and } from 'drizzle-orm';
+import { eq, desc, and, gte, lte, like, or } from 'drizzle-orm';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
 /**
- * 작품 목록 조회 및 신규 작품 등록
+ * 작품 목록 조회 (고급 필터링 지원) 및 신규 작품 등록
  */
 export async function GET(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const category = searchParams.get('category');
     const userId = searchParams.get('userId');
+    const minPrice = searchParams.get('minPrice');
+    const maxPrice = searchParams.get('maxPrice');
+    const q = searchParams.get('q');
 
     const filters = [];
-    if (category && category !== 'All') filters.push(eq(artworks.category, category));
-    if (userId) filters.push(eq(artworks.userId, userId));
+    
+    // 카테고리 필터
+    if (category && category !== 'All') {
+      filters.push(eq(artworks.category, category));
+    }
+    
+    // 유저(작가) 필터
+    if (userId) {
+      filters.push(eq(artworks.userId, userId));
+    }
+    
+    // 가격 범위 필터 (렌탈료 기준)
+    if (minPrice) {
+      filters.push(gte(artworks.priceRental, Number(minPrice)));
+    }
+    if (maxPrice) {
+      filters.push(lte(artworks.priceRental, Number(maxPrice)));
+    }
+    
+    // 통합 검색 (제목, 작가명)
+    if (q) {
+      filters.push(
+        or(
+          like(artworks.title, `%${q}%`),
+          like(artworks.artist, `%${q}%`)
+        )
+      );
+    }
 
     const results = await db.query.artworks.findMany({
-      where: filters.length > 0 ? (filters.length > 1 ? and(...filters) : filters[0]) : undefined,
+      where: filters.length > 0 ? (filters.length > 1 ? and(...filters as any) : filters[0]) : undefined,
       orderBy: [desc(artworks.createdAt)],
     });
 

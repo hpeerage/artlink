@@ -36,6 +36,7 @@ export const users = sqliteTable("users", {
   emailVerified: integer("email_verified", { mode: "timestamp" }),
   image: text("image"),
   password: text("password"),
+  role: text("role").default("user").notNull(), // 'user', 'artist', 'admin'
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
@@ -46,6 +47,27 @@ export const usersRelations = relations(users, ({ many }) => ({
   accounts: many(accounts),
   sessions: many(sessions),
   favorites: many(favorites),
+  notifications: many(notifications),
+}));
+
+// ... (기존 favorites 테이블 유지)
+
+// 6. 알림 테이블 (Notifications)
+export const notifications = sqliteTable("notifications", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id),
+  type: text("type").notNull(), // 'payment', 'subscription', 'system', 'favorite'
+  message: text("message").notNull(),
+  isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
+  link: text("link"), // 클릭 시 이동할 경로
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
 }));
 
 // 5. 관심 작품 (Favorites)

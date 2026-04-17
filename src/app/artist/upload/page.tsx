@@ -43,11 +43,49 @@ const ArtworkUploadPage = () => {
 
     setIsUploading(true);
     try {
-      // 1. 이미지 처리 (현재는 로컬 미리보기 URL을 그대로 사용하거나 Mock 저장)
-      // 실제 프로덕션에서는 S3나 로컬 서버 스토리지로 업로드하는 API가 추가로 필요합니다.
-      const publicUrl = previewUrl || 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5';
+      let finalImageUrl = 'https://images.unsplash.com/photo-1579783902614-a3fb3927b6a5';
 
-      // 2. 새로운 Prisma API를 호출하여 SQLite에 메타데이터 저장
+      // 1. Cloudinary Signed Upload 진행
+      const timestamp = Math.round(new Date().getTime() / 1000);
+      const paramsToSign = {
+        timestamp,
+        folder: 'artlink'
+      };
+
+      // 서명 받기
+      const signResponse = await fetch('/api/auth/cloudinary-sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paramsToSign }),
+      });
+
+      if (!signResponse.ok) throw new Error('Cloudinary 서명을 가져오는데 실패했습니다.');
+      const { signature } = await signResponse.json();
+
+      // 실제 업로드
+      const formDataUpload = new FormData();
+      formDataUpload.append('file', selectedFile);
+      formDataUpload.append('api_key', process.env.NEXT_PUBLIC_CLOUDINARY_API_KEY || '');
+      formDataUpload.append('timestamp', timestamp.toString());
+      formDataUpload.append('signature', signature);
+      formDataUpload.append('folder', 'artlink');
+
+      const uploadResponse = await fetch(
+        `https://api.cloudinary.com/v1_1/${process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: formDataUpload }
+      );
+
+      if (!uploadResponse.ok) {
+        console.error('Cloudinary upload error:', await uploadResponse.text());
+        alert('이미지 업로드에 실패했습니다. 환경 변수 설정을 확인해 주세요.');
+      } else {
+        const uploadData = await uploadResponse.json();
+        // AR 뷰어 및 비용 최적화를 위한 변환 옵션 추가 (w_1024, f_webp, q_auto)
+        const baseUrl = uploadData.secure_url;
+        finalImageUrl = baseUrl.replace('/upload/', '/upload/w_1024,f_webp,q_auto/');
+      }
+
+      // 2. API를 호출하여 데이터베이스에 메타데이터 저장
       const response = await fetch('/api/artworks', {
         method: 'POST',
         headers: {
@@ -60,7 +98,9 @@ const ArtworkUploadPage = () => {
           category: formData.category,
           price_buy: parseFloat(formData.priceBuy) || 0,
           price_rental: parseFloat(formData.priceRental) || 0,
-          image_url: publicUrl,
+          width_mm: parseInt(formData.width) || 0,
+          height_mm: parseInt(formData.height) || 0,
+          image_url: finalImageUrl,
           model_url: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb', // 기본 모델
         }),
       });

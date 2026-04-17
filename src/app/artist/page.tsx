@@ -3,10 +3,12 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, LayoutDashboard, ImageIcon, BarChart3, Settings, LogOut, ExternalLink, Box, Loader2 } from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
 
 interface Artwork {
   id: string;
   title: string;
+  userId: string;
   artist: string;
   price_buy: number;
   price_rental: number;
@@ -16,14 +18,18 @@ interface Artwork {
 }
 
 const ArtistDashboard = () => {
+  const { data: session, status } = useSession();
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchArtworks = async () => {
+      if (status !== 'authenticated' || !session?.user) return;
+      
       setIsLoading(true);
       try {
-        const response = await fetch('/api/artworks');
+        const userId = (session.user as any).id;
+        const response = await fetch(`/api/artworks?userId=${userId}`);
         if (!response.ok) throw new Error('Failed to fetch');
         const data = await response.json();
         setArtworks(data || []);
@@ -34,8 +40,12 @@ const ArtistDashboard = () => {
       }
     };
 
-    fetchArtworks();
-  }, []);
+    if (status === 'authenticated') {
+      fetchArtworks();
+    } else if (status === 'unauthenticated') {
+      setIsLoading(false);
+    }
+  }, [session, status]);
 
   return (
     <div className="min-h-screen bg-[#F0F2F5] flex">
@@ -68,7 +78,10 @@ const ArtistDashboard = () => {
         </nav>
 
         <div className="p-6 border-t border-gray-800">
-          <button className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-red-400 transition-colors text-sm font-bold">
+          <button 
+            onClick={() => signOut({ callbackUrl: "/" })}
+            className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-red-400 transition-colors text-sm font-bold"
+          >
             <LogOut className="h-5 w-5" />
             Logout
           </button>
@@ -79,8 +92,8 @@ const ArtistDashboard = () => {
       <main className="flex-1 ml-64 p-10">
         <header className="flex justify-between items-end mb-12">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 mb-2">Welcome back, Artist</h1>
-            <p className="text-gray-500 font-medium italic">당신의 예술적 세계를 1:1 리전 스케일로 공유하세요.</p>
+            <h1 className="text-3xl font-black text-gray-900 mb-2">Welcome back, {session?.user?.name || 'Artist'}</h1>
+            <p className="text-gray-500 font-medium italic">당신의 예술적 세계를 1:1 리얼 스케일로 공유하세요.</p>
           </div>
           <Link 
             href="/artist/upload"

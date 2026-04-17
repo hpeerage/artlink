@@ -1,57 +1,48 @@
-import { NextResponse } from "next/server";
-import { NextRequest } from "next/server";
-import bcrypt from "bcryptjs";
-import { db } from "@/lib/turso";
-import { users } from "@/lib/db/schema";
-import { eq } from "drizzle-orm";
+import { NextRequest, NextResponse } from 'next/server';
+import bcrypt from 'bcryptjs';
+import { db } from '@/lib/turso';
+import { users } from '@/lib/db/schema';
+import { eq } from 'drizzle-orm';
 
-export async function POST(req: NextRequest) {
+export async function POST(request: NextRequest) {
   try {
-    const { email, password, name } = await req.json();
+    const { name, email, password } = await request.json();
 
-    if (!email || !password) {
-      return NextResponse.json(
-        { message: "이메일과 비밀번호는 필수입니다." },
-        { status: 400 }
-      );
+    if (!name || !email || !password) {
+      return NextResponse.json({ error: '필수 정보가 누락되었습니다.' }, { status: 400 });
     }
 
-    const [existingUser] = await db.select()
+    // 이메일 중복 확인
+    const [existingUser]: any = await db.select()
       .from(users)
       .where(eq(users.email, email))
       .limit(1);
 
     if (existingUser) {
-      return NextResponse.json(
-        { message: "이미 사용 중인 이메일입니다." },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: '이미 존재하는 이메일입니다.' }, { status: 400 });
     }
 
+    // 비밀번호 해싱
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const [user] = await db.insert(users).values({
-      email,
+    // 사용자 생성
+    const [newUser] = await db.insert(users).values({
       name,
-      password: hashedPassword
+      email,
+      password: hashedPassword,
     }).returning();
 
-    return NextResponse.json(
-      { message: "회원가입이 완료되었습니다.", user: { id: user.id, email: user.email } },
-      { status: 201 }
-    );
-  } catch (error: any) {
-    console.error("Registration error details:", {
-      message: error.message,
-      stack: error.stack
+    return NextResponse.json({
+      success: true,
+      user: {
+        id: newUser.id,
+        name: newUser.name,
+        email: newUser.email,
+      }
     });
-    
-    return NextResponse.json(
-      { 
-        message: "회원가입 처리 중 오류가 발생했습니다.",
-        debug: error.message 
-      },
-      { status: 500 }
-    );
+
+  } catch (error: any) {
+    console.error('Registration error:', error);
+    return NextResponse.json({ error: '회원가입 중 오류가 발생했습니다.' }, { status: 500 });
   }
 }

@@ -4,6 +4,7 @@ import { sql, relations } from "drizzle-orm";
 // 1. 작품 테이블 (Artworks) - mm 단위 규격 포함
 export const artworks = sqliteTable("artworks", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").references(() => users.id), // 추가: 작가 ID
   title: text("title").notNull(),
   artist: text("artist").notNull(),
   description: text("description"),
@@ -18,7 +19,11 @@ export const artworks = sqliteTable("artworks", {
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
-export const artworksRelations = relations(artworks, ({ many }) => ({
+export const artworksRelations = relations(artworks, ({ one, many }) => ({
+  author: one(users, {
+    fields: [artworks.userId],
+    references: [users.id],
+  }),
   subscriptions: many(subscriptions),
 }));
 

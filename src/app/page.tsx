@@ -8,7 +8,25 @@ import { useSession, signOut } from 'next-auth/react';
 
 export default function Home() {
   const { data: session, status } = useSession();
-  const featuredArtworks = MOCK_ARTWORKS.slice(0, 3);
+  const [featuredArtworks, setFeaturedArtworks] = React.useState<any[]>([]);
+  const [loading, setLoading] = React.useState(true);
+
+  React.useEffect(() => {
+    const fetchArtworks = async () => {
+      try {
+        const response = await fetch('/api/artworks');
+        if (response.ok) {
+          const data = await response.json();
+          setFeaturedArtworks(data.slice(0, 3));
+        }
+      } catch (error) {
+        console.error('Failed to fetch artworks:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchArtworks();
+  }, []);
 
   return (
     <div className="min-h-screen bg-white">

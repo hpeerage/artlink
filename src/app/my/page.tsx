@@ -2,86 +2,115 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { User, Settings, CreditCard, Box, LogOut, ChevronRight, Bookmark, Loader2, Heart } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { 
+  User, 
+  Settings, 
+  CreditCard, 
+  Box, 
+  LogOut, 
+  ChevronRight, 
+  Bookmark, 
+  Loader2, 
+  Heart, 
+  Users, 
+  Star, 
+  Building2, 
+  Clock,
+  ExternalLink,
+  MessageSquare
+} from 'lucide-react';
+import { useSession, signOut } from 'next-auth/react';
 import Header from '@/components/common/Header';
 
 interface Artwork {
   id: string;
   title: string;
   artist: string;
-  price_buy: number;
-  price_rental: number;
-  image_url: string;
+  priceRental: number;
+  imageUrl: string;
 }
+
+type TabType = 'rentals' | 'favorites' | 'following' | 'reviews' | 'b2b';
 
 const MyPage = () => {
   const { data: session } = useSession();
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
+  const [following, setFollowing] = useState<any[]>([]);
+  const [reviews, setReviews] = useState<any[]>([]);
+  const [b2bInquiries, setB2bInquiries] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState<'rentals' | 'favorites'>('rentals');
+  const [activeTab, setActiveTab] = useState<TabType>('rentals');
+
+  const fetchData = async () => {
+    setIsLoading(true);
+    try {
+      const [subRes, favRes, followRes, reviewRes, b2bRes] = await Promise.all([
+        fetch('/api/my/subscriptions'),
+        fetch('/api/my/favorites'),
+        fetch('/api/my/following'),
+        fetch('/api/my/reviews'),
+        fetch('/api/my/b2b-inquiries')
+      ]);
+      
+      if (subRes.ok) setSubscriptions(await subRes.json());
+      if (favRes.ok) setFavorites(await favRes.json());
+      if (followRes.ok) setFollowing(await followRes.json());
+      if (reviewRes.ok) setReviews(await reviewRes.json());
+      if (b2bRes.ok) setB2bInquiries(await b2bRes.json());
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const fetchData = async () => {
-      setIsLoading(true);
-      try {
-        const [subRes, favRes] = await Promise.all([
-          fetch('/api/my/subscriptions'),
-          fetch('/api/my/favorites')
-        ]);
-        
-        if (subRes.ok) {
-          const subData = await subRes.json();
-          setSubscriptions(subData || []);
-        }
-        if (favRes.ok) {
-          const favData = await favRes.json();
-          setFavorites(favData || []);
-        }
-      } catch (error) {
-        console.error('Error fetching data:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
+    if (session) fetchData();
+  }, [session]);
 
-    fetchData();
-  }, []);
-
-  const latestSub = subscriptions.length > 0 ? subscriptions[0] : null;
-  const subscribedWork = latestSub?.artwork;
   const userName = session?.user?.name || 'User';
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <Header />
 
-      <main className="container mx-auto px-6 py-12">
+      <main className="container mx-auto px-6 py-12 max-w-7xl">
         <div className="grid lg:grid-cols-4 gap-12">
           {/* Sidebar */}
-          <aside className="space-y-2">
+          <aside className="space-y-2 h-fit sticky top-24">
+            <div className="p-6 bg-white rounded-3xl border border-gray-100 shadow-sm mb-6 flex items-center gap-4">
+               <div className="w-12 h-12 bg-primary/10 rounded-2xl flex items-center justify-center text-primary font-black text-xl">
+                 {userName.substring(0, 1)}
+               </div>
+               <div>
+                 <p className="text-xs font-black text-gray-400 uppercase tracking-widest">Collector</p>
+                 <p className="font-black text-gray-900">{userName}</p>
+               </div>
+            </div>
+
             {[
-              { id: 'profile', icon: User, label: '프로필 설정', active: false },
-              { id: 'rentals', icon: Box, label: '내 렌탈 내역', active: activeTab === 'rentals' },
+              { id: 'rentals', icon: Box, label: '내 렌탈/구독', active: activeTab === 'rentals' },
               { id: 'favorites', icon: Heart, label: '관심 작품', active: activeTab === 'favorites' },
-              { id: 'payments', icon: CreditCard, label: '결제 수단 관리', active: false },
+              { id: 'following', icon: Users, label: '팔로우 작가', active: activeTab === 'following' },
+              { id: 'reviews', icon: MessageSquare, label: '내 리뷰 관리', active: activeTab === 'reviews' },
+              { id: 'b2b', icon: Building2, label: 'B2B 상담 현황', active: activeTab === 'b2b' },
               { id: 'logout', icon: LogOut, label: '로그아웃', active: false },
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => {
-                  if (item.id === 'rentals' || item.id === 'favorites') setActiveTab(item.id as any);
-                  if (item.id === 'logout') signOut({ callbackUrl: "/" });
+                  if (item.id !== 'logout') setActiveTab(item.id as any);
+                  else signOut({ callbackUrl: "/" });
                 }}
                 className={`w-full flex items-center justify-between px-6 py-4 rounded-2xl transition-all ${
                   item.active 
-                  ? 'bg-white text-gray-900 shadow-sm font-bold border border-gray-100' 
-                  : 'text-gray-400 hover:bg-gray-50 hover:text-gray-600'
+                  ? 'bg-primary text-white shadow-xl shadow-primary/20 font-black' 
+                  : 'text-gray-400 hover:bg-white hover:text-gray-900 hover:shadow-sm'
                 }`}
               >
                 <div className="flex items-center gap-3">
-                  <item.icon className="h-5 w-5" />
+                  <item.icon className={`h-5 w-5 ${item.active ? 'text-white' : 'text-gray-400'}`} />
                   <span className="text-sm">{item.label}</span>
                 </div>
                 {item.active && <ChevronRight className="h-4 w-4" />}
@@ -90,106 +119,173 @@ const MyPage = () => {
           </aside>
 
           {/* Content */}
-          <div className="lg:col-span-3 space-y-10">
-            <section className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-gray-50 overflow-hidden relative">
-               <div className="relative z-10">
-                <h1 className="text-3xl font-black text-gray-900 mb-2">안녕하세요, {userName}님!</h1>
-                <p className="text-gray-400 font-medium mb-8">ArtLink와 함께 예술적인 공간을 만들어가고 있습니다.</p>
-                
-                <div className="grid sm:grid-cols-3 gap-6">
-                  {[
-                    { label: '구독 중인 작품', value: subscriptions.length.toString(), unit: '점' },
-                    { label: '관심 작품', value: favorites.length.toString(), unit: '점' },
-                    { label: '누적 렌탈 기간', value: '12', unit: '일' },
-                  ].map((stat, i) => (
-                    <div key={i} className="p-6 bg-gray-50 rounded-3xl border border-gray-100">
-                      <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
-                      <p className="text-2xl font-black text-gray-900">{stat.value}<span className="text-xs font-medium ml-1 text-gray-400">{stat.unit}</span></p>
-                    </div>
-                  ))}
-                </div>
+          <div className="lg:col-span-3 space-y-8">
+            {/* Summary Banner */}
+            <section className="bg-gray-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl">
+               <div className="relative z-10 flex flex-col md:flex-row justify-between gap-10">
+                 <div>
+                    <h1 className="text-3xl font-black mb-2 tracking-tighter">ArtLink 컬렉터 대시보드</h1>
+                    <p className="text-gray-400 font-medium">당신의 공간에 어울리는 최적의 작품을 관리하세요.</p>
+                 </div>
+                 <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
+                   {[
+                     { label: '구독 중', value: subscriptions.length },
+                     { label: '관심 작품', value: favorites.length },
+                     { label: '팔로잉', value: following.length },
+                     { label: '내 리뷰', value: reviews.length },
+                   ].map((stat, i) => (
+                     <div key={i} className="text-center md:text-left">
+                        <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{stat.label}</p>
+                        <p className="text-2xl font-black">{stat.value}</p>
+                     </div>
+                   ))}
+                 </div>
                </div>
-               {/* Decorative background shape */}
-               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 rounded-full translate-x-32 -translate-y-32"></div>
+               <div className="absolute top-0 right-0 w-64 h-64 bg-primary/10 rounded-full translate-x-16 -translate-y-16 blur-3xl"></div>
             </section>
 
-            <section>
-              <div className="flex justify-between items-center mb-6 border-b border-gray-100 pb-4">
-                <div className="flex gap-8">
-                  <button 
-                    onClick={() => setActiveTab('rentals')}
-                    className={`text-xl font-black transition-all ${activeTab === 'rentals' ? 'text-gray-900 border-b-2 border-primary pb-4 -mb-[18px]' : 'text-gray-300'}`}
-                  >
-                    최근 구독 내역
-                  </button>
-                  <button 
-                    onClick={() => setActiveTab('favorites')}
-                    className={`text-xl font-black transition-all ${activeTab === 'favorites' ? 'text-gray-900 border-b-2 border-primary pb-4 -mb-[18px]' : 'text-gray-300'}`}
-                  >
-                    내 관심 작품
-                  </button>
-                </div>
-                <Link href="/explore" className="text-sm font-bold text-primary">작품 더 보기</Link>
-              </div>
-              
+            {/* Dynamic Content Area */}
+            <section className="min-h-[600px]">
               {isLoading ? (
-                <div className="bg-white rounded-[2.5rem] p-24 border border-gray-50 shadow-sm flex flex-col items-center justify-center gap-4 text-gray-400">
+                <div className="flex flex-col items-center justify-center py-40 text-gray-400 gap-4 opacity-50">
                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                   <p className="font-bold">데이터를 불러오는 중...</p>
+                   <p className="font-bold tracking-widest text-[10px] uppercase">Syncing Dashboard Data...</p>
                 </div>
-              ) : activeTab === 'rentals' ? (
-                subscribedWork ? (
-                  <div className="bg-white rounded-[2.5rem] p-8 border border-gray-50 shadow-sm flex flex-col md:flex-row items-center gap-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                    <div className="w-full md:w-32 h-40 bg-gray-100 rounded-2xl overflow-hidden shadow-inner shrink-0">
-                      <img src={subscribedWork.image_url} alt={subscribedWork.title} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex-1 text-center md:text-left">
-                      <span className="inline-block px-3 py-1 bg-green-50 text-green-500 text-[10px] font-black uppercase tracking-tighter rounded-full mb-3">구독 중 ({latestSub.status})</span>
-                      <h4 className="text-2xl font-black text-gray-900 mb-1">{subscribedWork.title}</h4>
-                      <p className="text-gray-400 font-bold italic mb-5">{subscribedWork.artist}</p>
-                      <div className="flex flex-wrap justify-center md:justify-start gap-4">
-                        <button className="px-6 py-2 bg-gray-900 text-white text-xs font-black rounded-xl hover:bg-black transition-all">결제 정보</button>
-                        <button className="px-6 py-2 border border-gray-200 text-gray-500 text-xs font-black rounded-xl hover:bg-gray-50 transition-all">구독 취소</button>
-                      </div>
-                    </div>
-                    <div className="text-right border-t md:border-t-0 md:border-l border-gray-50 pt-6 md:pt-0 md:pl-12 w-full md:w-auto">
-                       <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">다음 결제일</p>
-                       <p className="text-xl font-black text-gray-900">{latestSub.nextPaymentDate ? new Date(latestSub.nextPaymentDate).toLocaleDateString() : 'N/A'}</p>
-                       <p className="text-xs font-bold text-primary mt-1 italic">₩{latestSub.amount?.toLocaleString()} 예정</p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="bg-white rounded-[2.5rem] p-24 border border-gray-50 shadow-sm text-center text-gray-400">
-                     <p className="font-bold italic mb-4">현재 구독 중인 작품이 없습니다.</p>
-                     <Link href="/explore" className="text-primary font-black underline">작품 둘러보기</Link>
-                  </div>
-                )
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                  {favorites.length > 0 ? (
-                    favorites.map((fav) => (
-                      <Link 
-                        key={fav.id} 
-                        href={`/artwork/${fav.artworkId}`}
-                        className="group bg-white rounded-[2rem] p-4 border border-gray-50 shadow-sm hover:shadow-xl transition-all"
-                      >
-                        <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 mb-4">
-                          <img src={fav.artwork.image_url} alt={fav.artwork.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                <div className="animate-in fade-in duration-500">
+                  {activeTab === 'rentals' && (
+                    <div className="space-y-6">
+                      <h3 className="text-xl font-black text-gray-900 px-2 flex items-center gap-2">
+                        <Clock className="h-5 w-5 text-primary" />
+                        구독 타임라인
+                      </h3>
+                      {subscriptions.length > 0 ? (
+                        <div className="space-y-4">
+                          {subscriptions.map((sub) => (
+                            <div key={sub.id} className="bg-white rounded-3xl p-8 border border-gray-50 shadow-sm hover:shadow-md transition-all flex flex-col md:flex-row items-center gap-8">
+                              <div className="w-24 h-32 rounded-2xl overflow-hidden bg-gray-100 shadow-sm shrink-0">
+                                <img src={sub.artwork.image_url} alt={sub.artwork.title} className="w-full h-full object-cover" />
+                              </div>
+                              <div className="flex-1 w-full text-center md:text-left">
+                                <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
+                                   <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase rounded-full">Active</span>
+                                   <span className="text-[10px] font-bold text-gray-400">{new Date(sub.createdAt).toLocaleDateString()} 시작</span>
+                                </div>
+                                <h4 className="text-xl font-black text-gray-900">{sub.artwork.title}</h4>
+                                <p className="text-sm text-gray-400 font-bold italic">{sub.artwork.artist}</p>
+                              </div>
+                              <div className="w-full md:w-auto pt-6 md:pt-0 md:pl-8 border-t md:border-t-0 md:border-l border-gray-50 flex flex-col items-center md:items-end">
+                                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">다음 결제 예정일</p>
+                                <p className="text-lg font-black text-gray-900">{new Date(sub.nextPaymentDate).toLocaleDateString()}</p>
+                                <p className="text-sm font-bold text-primary mt-1">₩{sub.amount?.toLocaleString()}</p>
+                              </div>
+                            </div>
+                          ))}
                         </div>
-                        <div className="px-2 pb-2">
-                          <h4 className="font-black text-gray-900 mb-1 truncate">{fav.artwork.title}</h4>
-                          <p className="text-xs text-gray-400 font-bold mb-3">{fav.artwork.artist}</p>
-                          <div className="flex justify-between items-center text-[10px] font-black uppercase text-primary">
-                             <span>Rental Start From</span>
-                             <span>₩{fav.artwork.priceRental?.toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </Link>
-                    ))
-                  ) : (
-                    <div className="col-span-full bg-white rounded-[2.5rem] p-24 border border-gray-50 shadow-sm text-center text-gray-400">
-                       <p className="font-bold italic mb-4">관심 작품 목록이 비어 있습니다.</p>
-                       <Link href="/explore" className="text-primary font-black underline">첫 번째 작품 찜하기</Link>
+                      ) : (
+                        <EmptyState message="아직 구독 중인 작품이 없습니다. AR로 미리 공간을 연출해 보세요!" link="/explore" />
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'favorites' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {favorites.length > 0 ? (
+                        favorites.map((fav) => (
+                          <ArtworkCard key={fav.id} artwork={fav.artwork} />
+                        ))
+                      ) : (
+                        <div className="col-span-full"><EmptyState message="찜한 작품이 없습니다." /></div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'following' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {following.length > 0 ? (
+                        following.map((f) => (
+                          <Link 
+                            key={f.id} 
+                            href={`/artist/${f.following.id}`}
+                            className="bg-white rounded-3xl p-6 border border-gray-50 shadow-sm hover:shadow-xl transition-all flex items-center gap-6 group"
+                          >
+                             <div className="w-16 h-16 rounded-2xl overflow-hidden bg-gray-100 group-hover:scale-105 transition-transform">
+                                <img src={f.following.image || '/icons/user-placeholder.svg'} alt={f.following.name} className="w-full h-full object-cover" />
+                             </div>
+                             <div className="flex-1">
+                                <h4 className="font-black text-gray-900 text-lg">{f.following.name}</h4>
+                                <p className="text-xs text-gray-400 font-medium line-clamp-1">{f.following.bio || '작가 소개가 없습니다.'}</p>
+                             </div>
+                             <ArrowRight className="h-5 w-5 text-gray-200 group-hover:text-primary transition-colors" />
+                          </Link>
+                        ))
+                      ) : (
+                        <div className="col-span-full"><EmptyState message="팔로우 중인 작가가 없습니다." /></div>
+                      )}
+                    </div>
+                  )}
+
+                  {activeTab === 'reviews' && (
+                    <div className="space-y-6">
+                       {reviews.length > 0 ? (
+                         reviews.map((review) => (
+                           <div key={review.id} className="bg-white rounded-3xl p-8 border border-gray-50 shadow-sm">
+                              <div className="flex items-center gap-4 mb-4">
+                                 <div className="w-10 h-10 rounded-xl overflow-hidden bg-gray-100">
+                                    <img src={review.artwork.image_url} alt={review.artwork.title} className="w-full h-full object-cover" />
+                                 </div>
+                                 <div>
+                                    <p className="text-xs font-black text-gray-900">{review.artwork.title}</p>
+                                    <div className="flex gap-0.5 mt-0.5">
+                                      {[...Array(5)].map((_, i) => (
+                                        <Star key={i} className={`h-3 w-3 ${i < review.rating ? 'text-primary fill-primary' : 'text-gray-200'}`} />
+                                      ))}
+                                    </div>
+                                 </div>
+                                 <span className="ml-auto text-[10px] font-bold text-gray-300">{new Date(review.createdAt).toLocaleDateString()}</span>
+                              </div>
+                              <p className="text-sm font-medium text-gray-600 leading-relaxed italic">"{review.comment}"</p>
+                           </div>
+                         ))
+                       ) : (
+                         <EmptyState message="작성한 리뷰가 없습니다." />
+                       )}
+                    </div>
+                  )}
+
+                  {activeTab === 'b2b' && (
+                    <div className="space-y-6">
+                       {b2bInquiries.length > 0 ? (
+                         b2bInquiries.map((inq) => (
+                           <div key={inq.id} className="bg-white rounded-3xl p-8 border border-gray-50 shadow-sm group">
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+                                 <div>
+                                    <div className="flex items-center gap-2 mb-2">
+                                       <span className={`px-3 py-1 text-[10px] font-black uppercase rounded-full ${
+                                         inq.status === 'pending' ? 'bg-orange-50 text-orange-500' :
+                                         inq.status === 'contacted' ? 'bg-blue-50 text-blue-500' : 'bg-green-50 text-green-500'
+                                       }`}>
+                                          {inq.status}
+                                       </span>
+                                       <span className="text-[10px] font-bold text-gray-400">ID: {inq.id.substring(0, 8)}</span>
+                                    </div>
+                                    <h4 className="text-xl font-black text-gray-900">{inq.companyName}</h4>
+                                    <p className="text-sm text-gray-400 font-medium">담당자: {inq.managerName}</p>
+                                 </div>
+                                 <div className="text-right">
+                                    <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Inquiry Date</p>
+                                    <p className="text-sm font-black text-gray-900">{new Date(inq.createdAt).toLocaleDateString()}</p>
+                                 </div>
+                              </div>
+                              <div className="mt-6 pt-6 border-t border-gray-50 bg-gray-50/50 rounded-2xl p-6">
+                                 <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Request Message</p>
+                                 <p className="text-sm font-medium text-gray-600 leading-relaxed italic">{inq.message || '요청 사항이 없습니다.'}</p>
+                              </div>
+                           </div>
+                         ))
+                       ) : (
+                         <EmptyState message="접수된 B2B 문의 내역이 없습니다." link="/b2b" />
+                       )}
                     </div>
                   )}
                 </div>
@@ -201,5 +297,32 @@ const MyPage = () => {
     </div>
   );
 };
+
+const ArtworkCard = ({ artwork }: { artwork: any }) => (
+  <Link 
+    href={`/artwork/${artwork.id}`}
+    className="group bg-white rounded-[2rem] p-4 border border-gray-50 shadow-sm hover:shadow-xl transition-all"
+  >
+    <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 mb-4">
+      <img src={artwork.image_url} alt={artwork.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+    </div>
+    <div className="px-2 pb-2">
+      <h4 className="font-black text-gray-900 mb-1 truncate">{artwork.title}</h4>
+      <p className="text-xs text-gray-400 font-bold mb-3">{artwork.artist}</p>
+      <p className="text-[10px] font-black uppercase text-primary">₩{artwork.priceRental?.toLocaleString()} / mo</p>
+    </div>
+  </Link>
+);
+
+const EmptyState = ({ message, link }: { message: string, link?: string }) => (
+  <div className="bg-white rounded-[3rem] p-24 border border-gray-50 shadow-sm text-center">
+    <p className="text-gray-300 font-bold italic mb-6">{message}</p>
+    {link && (
+      <Link href={link} className="inline-flex items-center gap-2 bg-gray-900 text-white px-8 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-primary transition-all">
+        Explore ArtWork <ArrowRight className="h-4 w-4" />
+      </Link>
+    )}
+  </div>
+);
 
 export default MyPage;

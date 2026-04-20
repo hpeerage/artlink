@@ -84,6 +84,7 @@ export const followsRelations = relations(follows, ({ one }) => ({
 // 10. B2B 문의 테이블 (B2BInquiries)
 export const b2bInquiries = sqliteTable("b2b_inquiries", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").references(() => users.id), // 추가: 로그인 사용자 연동 (Optional)
   companyName: text("company_name").notNull(),
   managerName: text("manager_name").notNull(),
   email: text("email").notNull(),
@@ -95,6 +96,13 @@ export const b2bInquiries = sqliteTable("b2b_inquiries", {
   status: text("status").default("pending").notNull(), // 'pending', 'contacted', 'completed'
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
+
+export const b2bInquiriesRelations = relations(b2bInquiries, ({ one }) => ({
+  user: one(users, {
+    fields: [b2bInquiries.userId],
+    references: [users.id],
+  }),
+}));
 
 // 3. 정기 구독/렌탈 테이블 (Subscriptions)
 export const subscriptions = sqliteTable("subscriptions", {
@@ -263,3 +271,24 @@ export const verificationTokens = sqliteTable("verification_tokens", {
   token: text("token").notNull().unique(),
   expires: integer("expires", { mode: "timestamp" }).notNull(),
 });
+
+// 11. 분석 데이터 테이블 (Analytics)
+export const analytics = sqliteTable("analytics", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  artworkId: text("artwork_id").references(() => artworks.id),
+  eventType: text("event_type").notNull(), // 'ar_view', 'snapshot', 'view'
+  userId: text("user_id").references(() => users.id),
+  metadata: text("metadata"), // 추가 정보 (JSON 형태)
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const analyticsRelations = relations(analytics, ({ one }) => ({
+  artwork: one(artworks, {
+    fields: [analytics.artworkId],
+    references: [artworks.id],
+  }),
+  user: one(users, {
+    fields: [analytics.userId],
+    references: [users.id],
+  }),
+}));

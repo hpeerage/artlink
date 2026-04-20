@@ -28,10 +28,15 @@ const ArtLinkModelViewer: React.FC<ArtLinkModelViewerProps> = ({
 }) => {
   const viewerRef = useRef<any>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [progress, setProgress] = useState(0);
 
   useEffect(() => {
     const viewer = viewerRef.current;
     if (!viewer) return;
+
+    const handleProgress = (event: any) => {
+      setProgress(Math.floor(event.detail.totalProgress * 100));
+    };
 
     const applyTexture = async () => {
       try {
@@ -106,6 +111,7 @@ const ArtLinkModelViewer: React.FC<ArtLinkModelViewerProps> = ({
       }
     };
 
+    viewer.addEventListener('progress', handleProgress);
     viewer.addEventListener('load', () => {
       applyTexture();
       applyFrameMaterial();
@@ -118,16 +124,26 @@ const ArtLinkModelViewer: React.FC<ArtLinkModelViewerProps> = ({
     
     return () => {
       viewer.removeEventListener('load', applyTexture);
+      viewer.removeEventListener('progress', handleProgress);
     };
   }, [textureUrl, frameType]);
 
   return (
     <div style={{ width, height, position: 'relative' }} className="rounded-2xl overflow-hidden bg-gray-100 border border-gray-100 shadow-inner">
       {isLoading && (
-        <div className="absolute inset-0 flex items-center justify-center bg-gray-50/80 backdrop-blur-sm z-10 transition-opacity">
-          <div className="flex flex-col items-center">
-            <div className="animate-spin rounded-full h-10 w-10 border-b-2 border-primary"></div>
-            <p className="mt-4 text-xs font-black tracking-widest text-gray-400 uppercase">Loading Artwork</p>
+        <div className="absolute inset-0 flex flex-col items-center justify-center bg-gray-50/90 backdrop-blur-md z-10">
+          <div className="w-48 space-y-4">
+             <div className="flex justify-between items-end mb-1">
+                <span className="text-[10px] font-black tracking-widest text-primary uppercase">Loading Asset</span>
+                <span className="text-[10px] font-black text-gray-400">{progress}%</span>
+             </div>
+             <div className="h-1 w-full bg-gray-200 rounded-full overflow-hidden">
+                <div 
+                  className="h-full bg-primary transition-all duration-300 ease-out"
+                  style={{ width: `${progress}%` }}
+                ></div>
+             </div>
+             <p className="text-center text-[9px] font-bold text-gray-300 italic">Optimizing 3D Real-scale Experience...</p>
           </div>
         </div>
       )}

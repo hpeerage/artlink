@@ -26,6 +26,7 @@ export const artworksRelations = relations(artworks, ({ one, many }) => ({
   }),
   subscriptions: many(subscriptions),
   favorites: many(favorites),
+  reviews: many(reviews),
 }));
 
 // 2. 사용자 테이블 (Users)
@@ -37,6 +38,10 @@ export const users = sqliteTable("users", {
   image: text("image"),
   password: text("password"),
   role: text("role").default("user").notNull(), // 'user', 'artist', 'admin'
+  bio: text("bio"), // 작가 소개
+  website: text("website"), // 개인 웹사이트
+  instagramUrl: text("instagram_url"), // 인스타그램 연동
+  otherSnsUrl: text("other_sns_url"), // 기타 SNS
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
   updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
@@ -48,24 +53,88 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   favorites: many(favorites),
   notifications: many(notifications),
+  reviews: many(reviews),
+  sentMessages: many(messages, { relationName: "sentMessages" }),
+  receivedMessages: many(messages, { relationName: "receivedMessages" }),
+  followers: many(follows, { relationName: "following" }),
+  following: many(follows, { relationName: "follower" }),
 }));
 
-// ... (기존 favorites 테이블 유지)
-
-// 6. 알림 테이블 (Notifications)
-export const notifications = sqliteTable("notifications", {
+// 9. 팔로우 테이블 (Follows)
+export const follows = sqliteTable("follows", {
   id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text("user_id").notNull().references(() => users.id),
-  type: text("type").notNull(), // 'payment', 'subscription', 'system', 'favorite'
-  message: text("message").notNull(),
-  isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
-  link: text("link"), // 클릭 시 이동할 경로
+  followerId: text("follower_id").notNull().references(() => users.id),
+  followingId: text("following_id").notNull().references(() => users.id),
   createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
 });
 
-export const notificationsRelations = relations(notifications, ({ one }) => ({
+export const followsRelations = relations(follows, ({ one }) => ({
+  follower: one(users, {
+    fields: [follows.followerId],
+    references: [users.id],
+    relationName: "follower",
+  }),
+  following: one(users, {
+    fields: [follows.followingId],
+    references: [users.id],
+    relationName: "following",
+  }),
+}));
+
+// 10. B2B 문의 테이블 (B2BInquiries)
+export const b2bInquiries = sqliteTable("b2b_inquiries", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  companyName: text("company_name").notNull(),
+  managerName: text("manager_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  spaceSize: text("space_size"), // 공간 규모 (평수 등)
+  budget: text("budget"), // 예산 범위
+  preferredDate: text("preferred_date"), // 상담 희망 일시
+  message: text("message"), // 추가 요청 사항
+  status: text("status").default("pending").notNull(), // 'pending', 'contacted', 'completed'
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+// 3. 정기 구독/렌탈 테이블 (Subscriptions)
+export const subscriptions = sqliteTable("subscriptions", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id),
+  artworkId: text("artwork_id").notNull().references(() => artworks.id),
+  billingKey: text("billing_key").notNull(),
+  status: text("status").default("active").notNull(),
+  amount: real("amount").notNull(),
+  nextPaymentDate: text("next_payment_date").notNull(),
+  lastPaymentDate: text("last_payment_date"),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
   user: one(users, {
-    fields: [notifications.userId],
+    fields: [subscriptions.userId],
+    references: [users.id],
+  }),
+  artwork: one(artworks, {
+    fields: [subscriptions.artworkId],
+    references: [artworks.id],
+  }),
+}));
+
+// 4. 결제 이력 테이블 (Payments)
+export const payments = sqliteTable("payments", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id),
+  amount: real("amount").notNull(),
+  paymentType: text("payment_type").notNull(), // 'buy' or 'rental'
+  status: text("status").default("pending").notNull(),
+  transactionId: text("transaction_id").unique(),
+  merchantUid: text("merchant_uid").notNull(),
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const paymentsRelations = relations(payments, ({ one }) => ({
+  user: one(users, {
+    fields: [payments.userId],
     references: [users.id],
   }),
 }));
@@ -90,7 +159,22 @@ export const favoritesRelations = relations(favorites, ({ one }) => ({
 }));
 
 // 6. 알림 테이블 (Notifications)
-// ... (기존 코드 유지)
+export const notifications = sqliteTable("notifications", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  userId: text("user_id").notNull().references(() => users.id),
+  type: text("type").notNull(), // 'payment', 'subscription', 'system', 'favorite'
+  message: text("message").notNull(),
+  isRead: integer("is_read", { mode: "boolean" }).default(false).notNull(),
+  link: text("link"), // 클릭 시 이동할 경로
+  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});
+
+export const notificationsRelations = relations(notifications, ({ one }) => ({
+  user: one(users, {
+    fields: [notifications.userId],
+    references: [users.id],
+  }),
+}));
 
 // 7. 리뷰 테이블 (Reviews)
 export const reviews = sqliteTable("reviews", {
@@ -134,36 +218,6 @@ export const messagesRelations = relations(messages, ({ one }) => ({
     fields: [messages.receiverId],
     references: [users.id],
     relationName: "receivedMessages",
-  }),
-}));
-
-export const subscriptionsRelations = relations(subscriptions, ({ one }) => ({
-  user: one(users, {
-    fields: [subscriptions.userId],
-    references: [users.id],
-  }),
-  artwork: one(artworks, {
-    fields: [subscriptions.artworkId],
-    references: [artworks.id],
-  }),
-}));
-
-// 4. 결제 이력 테이블 (Payments)
-export const payments = sqliteTable("payments", {
-  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
-  userId: text("user_id").notNull().references(() => users.id),
-  amount: real("amount").notNull(),
-  paymentType: text("payment_type").notNull(), // 'buy' or 'rental'
-  status: text("status").default("pending").notNull(),
-  transactionId: text("transaction_id").unique(),
-  merchantUid: text("merchant_uid").notNull(),
-  createdAt: text("created_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
-});
-
-export const paymentsRelations = relations(payments, ({ one }) => ({
-  user: one(users, {
-    fields: [payments.userId],
-    references: [users.id],
   }),
 }));
 

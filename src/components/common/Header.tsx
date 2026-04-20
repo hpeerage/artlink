@@ -40,6 +40,13 @@ const Header = () => {
           >
             AR Gallery
           </Link>
+          <Link 
+            href="/b2b" 
+            className={`hover:text-primary transition-colors flex items-center gap-1 ${pathname === '/b2b' ? 'text-primary' : ''}`}
+          >
+             <span className="w-1 h-1 bg-primary rounded-full animate-pulse"></span>
+             B2B Service
+          </Link>
           {isArtist ? (
             <Link 
               href="/artist/dashboard" 

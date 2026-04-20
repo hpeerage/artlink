@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Montserrat } from "next/font/google";
 import "./globals.css";
 import NextAuthSessionProvider from "@/components/providers/NextAuthSessionProvider";
+import { LanguageProvider } from "@/lib/i18n/LanguageContext";
 
 const montserrat = Montserrat({
   variable: "--font-montserrat",
@@ -56,7 +57,9 @@ export default function RootLayout({
       </head>
       <body className="font-sans min-h-full flex flex-col">
         <NextAuthSessionProvider>
-          {children}
+          <LanguageProvider>
+            {children}
+          </LanguageProvider>
         </NextAuthSessionProvider>
       </body>
     </html>

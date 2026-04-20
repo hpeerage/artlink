@@ -1,0 +1,46 @@
+{
+  "ko": {
+    "common": {
+      "explore": "탐색하기",
+      "community": "커뮤니티",
+      "b2b": "B2B 서비스",
+      "support": "고객지원",
+      "mypage": "마이페이지",
+      "login": "로그인",
+      "logout": "로그아웃"
+    },
+    "hero": {
+      "title": "공간의 가치를 바꾸는\n디지털 아트 렌탈",
+      "subtitle": "ArtLink의 혁신적인 WebAR 기술로\n지금 당신의 공간에 작품을 배치해 보세요."
+    },
+    "artwork": {
+      "aiDocent": "AI 도슨트 가이드",
+      "arExperience": "AR 체험하기",
+      "rental": "정기 렌탈 신청",
+      "buy": "작품 구매",
+      "specs": "작품 정보"
+    }
+  },
+  "en": {
+    "common": {
+      "explore": "Explore",
+      "community": "Community",
+      "b2b": "B2B Service",
+      "support": "Support",
+      "mypage": "My Page",
+      "login": "Login",
+      "logout": "Logout"
+    },
+    "hero": {
+      "title": "Redefining Spaces\nDigital Art Rental",
+      "subtitle": "Transform your space instantly\nwith ArtLink's innovative WebAR technology."
+    },
+    "artwork": {
+      "aiDocent": "AI Docent Guide",
+      "arExperience": "AR Experience",
+      "rental": "Rent Now",
+      "buy": "Buy Painting",
+      "specs": "Specifications"
+    }
+  }
+}

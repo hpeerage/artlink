@@ -31,6 +31,42 @@ const CommunityPage = () => {
       <Header />
 
       <main className="container mx-auto px-6 py-12">
+        {/* Best Collector Spotlight */}
+        <section className="mb-20 animate-in fade-in slide-in-from-top-4 duration-1000">
+          <div className="bg-gray-900 rounded-[3.5rem] overflow-hidden flex flex-col lg:flex-row shadow-2xl relative">
+             <div className="lg:w-2/3 relative h-[400px] lg:h-[600px] overflow-hidden">
+                <img 
+                  src="https://images.unsplash.com/photo-1618221195710-dd6b41fa68c8?q=80&w=2000&auto=format&fit=crop" 
+                  alt="Best Collector Space" 
+                  className="w-full h-full object-cover opacity-80 group-hover:scale-105 transition-transform duration-[2s]"
+                />
+                <div className="absolute inset-0 bg-gradient-to-r from-gray-900 via-transparent to-transparent"></div>
+                <div className="absolute top-10 left-10 flex items-center gap-2 bg-white/10 backdrop-blur-md px-5 py-2 rounded-2xl border border-white/10">
+                   <span className="w-2 h-2 bg-primary rounded-full animate-ping"></span>
+                   <span className="text-[10px] font-black text-white uppercase tracking-widest">Collector Spotlight</span>
+                </div>
+             </div>
+             <div className="lg:w-1/3 p-12 lg:p-16 flex flex-col justify-center text-white">
+                <h2 className="text-[10px] font-black text-primary uppercase tracking-[0.3em] mb-4">Honor of the Month</h2>
+                <h1 className="text-4xl font-black mb-6 tracking-tight leading-tight">심플함 속의 <br/>묵직한 울림, <br/>거실의 갤러리화.</h1>
+                <p className="text-gray-400 text-sm font-medium mb-10 leading-relaxed italic">
+                   "오후의 자연광이 비칠 때 그림의 텍스처가 살아나는 순간이 가장 경이롭습니다. ArtLink 덕분에 이 공간의 온도가 바뀌었어요."
+                </p>
+                <div className="flex items-center gap-4 border-t border-white/10 pt-10">
+                   <div className="w-12 h-12 bg-white/10 rounded-2xl flex items-center justify-center font-black text-primary">K</div>
+                   <div>
+                      <p className="text-sm font-black text-white">Collector. Kim</p>
+                      <p className="text-[9px] text-gray-500 font-bold uppercase tracking-tighter">Verified Art Enthusiast</p>
+                   </div>
+                </div>
+             </div>
+             {/* Decor UI */}
+             <div className="absolute bottom-10 right-10 opacity-10">
+                <div className="text-9xl font-black tracking-tighter select-none">ART</div>
+             </div>
+          </div>
+        </section>
+
         <header className="mb-16 text-center">
           <span className="text-[10px] font-black uppercase text-primary tracking-widest mb-4 block animate-in fade-in slide-in-from-bottom-2 duration-700">ArtLink Community</span>
           <h1 className="text-5xl font-black text-gray-900 tracking-tight mb-6">컬렉터들의 아트 라이프</h1>

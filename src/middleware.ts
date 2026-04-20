@@ -33,5 +33,7 @@ export const config = {
     "/my/:path*",
     "/artist/:path*",
     "/admin/:path*",
+    "/api/admin/:path*",
+    "/api/artist/:path*",
   ],
 };

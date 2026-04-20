@@ -15,7 +15,9 @@ import {
   Heart, 
   MessageSquare, 
   Loader2,
-  ArrowRight
+  ArrowRight,
+  Sparkles,
+  BookOpen
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession, signIn } from 'next-auth/react';
@@ -56,6 +58,30 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
   const [reviews, setReviews] = useState<any[]>([]);
   const [isLoadingReviews, setIsLoadingReviews] = useState(true);
   const [isChatOpen, setIsChatOpen] = useState(false);
+  
+  const [isAiDocentLoading, setIsAiDocentLoading] = useState(false);
+  const [aiAnalysis, setAiAnalysis] = useState<any>(null);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+
+  const fetchAiDocent = async () => {
+    setIsAiDocentLoading(true);
+    setIsAiModalOpen(true);
+    try {
+      const res = await fetch('/api/ai/docent', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artworkId: artwork.id }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setAiAnalysis(data.analysis);
+      }
+    } catch (err) {
+      console.error('AI Docent failed:', err);
+    } finally {
+      setIsAiDocentLoading(false);
+    }
+  };
 
   useEffect(() => {
     const checkStatus = async () => {
@@ -239,14 +265,23 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                   <div className="h-px flex-1 bg-gray-100"></div>
                </div>
                <h1 className="text-5xl font-black text-gray-900 leading-none mb-4 tracking-tighter">{artwork.title}</h1>
-               <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setIsChatOpen(true)}>
-                  <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center font-black text-gray-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                    {artwork.artist[0]}
+               <div className="flex items-center gap-4">
+                  <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setIsChatOpen(true)}>
+                    <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center font-black text-gray-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                      {artwork.artist[0]}
+                    </div>
+                    <div>
+                      <p className="text-sm font-black text-gray-900 group-hover:text-primary transition-colors">{artwork.artist}</p>
+                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">작가에게 상담하기 →</p>
+                    </div>
                   </div>
-                  <div>
-                    <p className="text-sm font-black text-gray-900 group-hover:text-primary transition-colors">{artwork.artist}</p>
-                    <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">작가에게 상담하기 →</p>
-                  </div>
+                  <button 
+                    onClick={fetchAiDocent}
+                    className="ml-auto flex items-center gap-2 bg-gradient-to-r from-primary to-blue-500 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all active:scale-95"
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    AI Docent Guide
+                  </button>
                </div>
             </div>
               
@@ -488,8 +523,76 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
           onClose={() => setIsChatOpen(false)} 
         />
       )}
+      {/* AI Docent Modal */}
+      {isAiModalOpen && (
+        <div className="fixed inset-0 z-[150] flex items-center justify-center px-6">
+          <div className="absolute inset-0 bg-black/60 backdrop-blur-md" onClick={() => setIsAiModalOpen(false)}></div>
+          <div className="relative w-full max-w-2xl bg-white rounded-[3.5rem] overflow-hidden shadow-2xl animate-in zoom-in-95 duration-500">
+             <div className="bg-gradient-to-r from-primary to-blue-600 p-10 text-white relative">
+                <button 
+                  onClick={() => setIsAiModalOpen(false)}
+                  className="absolute top-8 right-8 text-white/50 hover:text-white transition-colors"
+                >
+                  <X className="h-6 w-6" />
+                </button>
+                <div className="flex items-center gap-3 mb-4">
+                   <div className="bg-white/20 p-2 rounded-xl backdrop-blur-sm">
+                      <Sparkles className="h-6 w-6" />
+                   </div>
+                   <span className="text-xs font-black uppercase tracking-widest opacity-80">AI Intelligent Docent</span>
+                </div>
+                <h2 className="text-4xl font-black tracking-tighter leading-tight">작품에 담긴 <br/>예술적 서사를 읽어드립니다.</h2>
+             </div>
+             
+             <div className="p-10 max-h-[60vh] overflow-y-auto space-y-10 custom-scrollbar">
+                {isAiDocentLoading ? (
+                  <div className="py-20 flex flex-col items-center justify-center gap-4 text-gray-300">
+                     <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                     <p className="text-[10px] font-black uppercase tracking-widest animate-pulse">Analyzing Artwork with Vision AI...</p>
+                  </div>
+                ) : aiAnalysis && (
+                  <>
+                     <div className="space-y-4">
+                        <h4 className="text-xs font-black text-primary uppercase tracking-widest flex items-center gap-2">
+                           <BookOpen className="h-4 w-4" /> 01. Artistic Philosophy
+                        </h4>
+                        <p className="text-gray-600 font-medium leading-relaxed italic border-l-4 border-primary/20 pl-6 py-2 bg-gray-50/50 rounded-r-2xl">
+                           {aiAnalysis.philosophy}
+                        </p>
+                     </div>
+                     <div className="space-y-4">
+                        <h4 className="text-xs font-black text-blue-500 uppercase tracking-widest flex items-center gap-2">
+                           <Box className="h-4 w-4" /> 02. Technical Methodology
+                        </h4>
+                        <p className="text-gray-600 font-medium leading-relaxed">
+                           {aiAnalysis.technique}
+                        </p>
+                     </div>
+                     <div className="space-y-4">
+                        <h4 className="text-xs font-black text-purple-500 uppercase tracking-widest flex items-center gap-2">
+                           <Info className="h-4 w-4" /> 03. Creative Context
+                        </h4>
+                        <p className="text-gray-600 font-medium leading-relaxed">
+                           {aiAnalysis.context}
+                        </p>
+                     </div>
+                     <div className="bg-orange-50 p-8 rounded-[2.5rem] border border-orange-100/50">
+                        <h4 className="text-[10px] font-black text-orange-500 uppercase tracking-widest mb-3">Curator's Placement Tip</h4>
+                        <p className="text-sm font-bold text-orange-900 leading-relaxed">
+                           {aiAnalysis.curatorTip}
+                        </p>
+                     </div>
+                  </>
+                )}
+             </div>
+             <div className="p-10 border-t border-gray-50 text-center">
+                <p className="text-[10px] font-black text-gray-300 uppercase tracking-[0.3em]">ArtLink AI Intelligence Engine v2.0</p>
+             </div>
+          </div>
+        </div>
+      )}
     </div>
   );
-};
+}
 
 export default ArtworkDetailClient;

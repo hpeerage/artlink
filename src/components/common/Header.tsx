@@ -4,11 +4,13 @@ import React from 'react';
 import Link from 'next/link';
 import { useSession, signOut } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import NotificationHub from './NotificationHub';
 
 const Header = () => {
   const { data: session, status } = useSession();
   const pathname = usePathname();
+  const { language, setLanguage, t } = useLanguage();
 
   const isArtist = (session?.user as any)?.role === 'artist' || (session?.user as any)?.role === 'admin';
   const isAdmin = (session?.user as any)?.role === 'admin';
@@ -26,13 +28,13 @@ const Header = () => {
             href="/explore" 
             className={`hover:text-primary transition-colors ${pathname === '/explore' ? 'text-primary' : ''}`}
           >
-            Explore
+            {t('common.explore')}
           </Link>
           <Link 
             href="/community" 
             className={`hover:text-primary transition-colors ${pathname === '/community' ? 'text-primary' : ''}`}
           >
-            Community
+            {t('common.community')}
           </Link>
           <Link 
             href="/ar" 
@@ -45,21 +47,21 @@ const Header = () => {
             className={`hover:text-primary transition-colors flex items-center gap-1 ${pathname === '/b2b' ? 'text-primary' : ''}`}
           >
              <span className="w-1 h-1 bg-primary rounded-full animate-pulse"></span>
-             B2B Service
+             {t('common.b2b')}
           </Link>
           {isArtist ? (
             <Link 
               href="/artist/dashboard" 
               className={`hover:text-primary transition-colors ${pathname.startsWith('/artist') ? 'text-primary' : ''}`}
             >
-              Artist Console
+              Console
             </Link>
           ) : (
             <Link 
               href="/my" 
               className={`hover:text-primary transition-colors ${pathname === '/my' ? 'text-primary' : ''}`}
             >
-              My Page
+              {t('common.mypage')}
             </Link>
           )}
           {isAdmin && (
@@ -72,30 +74,48 @@ const Header = () => {
           )}
         </div>
         
-        <div className="flex items-center gap-4">
-          {status === 'authenticated' && <NotificationHub />}
-          
-          {status === 'authenticated' ? (
-            <div className="flex items-center gap-4">
-              <div className="hidden sm:block text-right">
-                <p className="text-[9px] font-black text-gray-300 uppercase tracking-tighter">Verified User</p>
-                <p className="text-[11px] font-bold text-gray-900">{session?.user?.name}</p>
+        <div className="flex items-center gap-6">
+          {/* Language Switcher */}
+          <div className="flex items-center bg-gray-50 p-1 rounded-xl border border-gray-100">
+             <button 
+               onClick={() => setLanguage('ko')}
+               className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${language === 'ko' ? 'bg-white text-primary shadow-sm' : 'text-gray-300 hover:text-gray-500'}`}
+             >
+               KO
+             </button>
+             <button 
+               onClick={() => setLanguage('en')}
+               className={`px-3 py-1.5 rounded-lg text-[10px] font-black transition-all ${language === 'en' ? 'bg-white text-primary shadow-sm' : 'text-gray-300 hover:text-gray-500'}`}
+             >
+               EN
+             </button>
+          </div>
+
+          <div className="flex items-center gap-4">
+            {status === 'authenticated' && <NotificationHub />}
+            
+            {status === 'authenticated' ? (
+              <div className="flex items-center gap-4">
+                <div className="hidden sm:block text-right">
+                  <p className="text-[9px] font-black text-gray-300 uppercase tracking-tighter">Verified User</p>
+                  <p className="text-[11px] font-bold text-gray-900">{session?.user?.name}</p>
+                </div>
+                <button 
+                  onClick={() => signOut({ callbackUrl: "/" })}
+                  className="bg-gray-100 text-gray-600 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all active:scale-95"
+                >
+                  {t('common.logout')}
+                </button>
               </div>
-              <button 
-                onClick={() => signOut({ callbackUrl: "/" })}
-                className="bg-gray-100 text-gray-600 px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-gray-200 transition-all active:scale-95"
+            ) : (
+              <Link 
+                href="/auth/login"
+                className="bg-gray-900 text-white px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-primary transition-all active:scale-95"
               >
-                Logout
-              </button>
-            </div>
-          ) : (
-            <Link 
-              href="/auth/login"
-              className="bg-gray-900 text-white px-7 py-3 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-xl shadow-gray-200 hover:bg-primary transition-all active:scale-95"
-            >
-              Login
-            </Link>
-          )}
+                {t('common.login')}
+              </Link>
+            )}
+          </div>
         </div>
       </div>
     </nav>

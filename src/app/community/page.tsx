@@ -1,9 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Header from '@/components/common/Header';
 import { Heart, MessageSquare, Share2, Loader2, Image as ImageIcon, ExternalLink } from 'lucide-react';
-import Link from 'next/link';
 
 const CommunityPage = () => {
   const [reviews, setReviews] = useState<any[]>([]);
@@ -28,7 +26,6 @@ const CommunityPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <Header />
 
       <main className="container mx-auto px-6 py-12">
         {/* Best Collector Spotlight */}

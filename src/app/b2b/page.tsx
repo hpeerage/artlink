@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState } from 'react';
-import Header from '@/components/common/Header';
 import { 
   Building2, 
   Briefcase, 
@@ -12,10 +11,14 @@ import {
   ArrowRight,
   MessageSquare,
   Coffee,
-  Paintbrush
+  Paintbrush,
+  Loader2,
+  Box
 } from 'lucide-react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 const B2BPage = () => {
+  const { t } = useLanguage();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [formData, setFormData] = useState({
@@ -51,20 +54,19 @@ const B2BPage = () => {
   if (isSubmitted) {
     return (
       <div className="min-h-screen bg-white">
-        <Header />
         <div className="pt-40 flex flex-col items-center text-center px-6">
           <div className="w-24 h-24 bg-primary/10 text-primary rounded-full flex items-center justify-center mb-8 animate-bounce">
             <CheckCircle2 className="h-12 w-12" />
           </div>
-          <h1 className="text-4xl font-black text-gray-900 mb-4 tracking-tighter">문의가 성공적으로 접수되었습니다.</h1>
+          <h1 className="text-4xl font-black text-gray-900 mb-4 tracking-tighter">{t('b2b.success_title')}</h1>
           <p className="text-gray-500 font-medium max-w-md leading-relaxed mb-10">
-            전문 큐레이터가 내용을 검토한 후, 기재해주신 연락처로 24시간 이내에 첫 안내 메시지(카카오 알림톡)를 보내드립니다.
+            {t('b2b.success_desc')}
           </p>
           <button 
             onClick={() => window.location.href = '/'}
             className="px-10 py-5 bg-gray-900 text-white rounded-3xl font-black text-sm hover:bg-primary transition-all shadow-xl shadow-gray-200"
           >
-            메인으로 돌아가기
+            {t('b2b.back_to_main')}
           </button>
         </div>
       </div>
@@ -73,22 +75,19 @@ const B2BPage = () => {
 
   return (
     <div className="min-h-screen bg-white overflow-hidden">
-      <Header />
 
       {/* Hero Section */}
       <section className="relative pt-40 pb-32 px-6 overflow-hidden">
         <div className="container mx-auto max-w-6xl text-center relative z-10">
           <div className="mb-6 inline-flex items-center gap-2 rounded-full bg-primary/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/10">
             <Building2 className="h-3 w-3" />
-            For Business & Commercial Space
+            {t('b2b.badge')}
           </div>
-          <h1 className="mb-8 text-6xl md:text-8xl font-black leading-[1.05] tracking-tighter text-gray-900">
-            비즈니스 공간에 <br />
-            <span className="text-primary italic">예술의 가치</span>를 더하다.
+          <h1 className="mb-8 text-6xl md:text-8xl font-black leading-[1.05] tracking-tighter text-gray-900 whitespace-pre-line">
+            {t('b2b.title')}
           </h1>
-          <p className="mb-12 max-w-2xl mx-auto text-xl text-gray-400 font-medium leading-relaxed">
-            오피스, 호텔, 카페, 병원 등 상업 공간의 성격에 맞춘 <br className="hidden md:block" />
-            전문 큐레이션과 WebAR 기반의 혁신적인 렌탈 솔루션을 경험하세요.
+          <p className="mb-12 max-w-2xl mx-auto text-xl text-gray-400 font-medium leading-relaxed whitespace-pre-line">
+            {t('b2b.subtitle')}
           </p>
         </div>
         {/* Background Decos */}
@@ -101,9 +100,9 @@ const B2BPage = () => {
         <div className="container mx-auto max-w-6xl px-6">
           <div className="grid md:grid-cols-3 gap-10">
             {[
-              { icon: Paintbrush, title: 'Expert Curation', desc: '공간의 아이덴티티를 고려한 맞춤형 예술 작품 매칭' },
-              { icon: Box, title: 'WebAR Simulation', desc: '실제 배치 전 공간 구성의 리스크를 제로화하는 시뮬레이션' },
-              { icon: CheckCircle2, title: 'Full Care Service', desc: '설치부터 정기 교체, 보험까지 원스톱 관리 서비스' },
+              { icon: Paintbrush, title: t('b2b.feature_curation'), desc: t('b2b.feature_curation_desc') },
+              { icon: Box, title: t('b2b.feature_ar'), desc: t('b2b.feature_ar_desc') },
+              { icon: CheckCircle2, title: t('b2b.feature_care'), desc: t('b2b.feature_care_desc') },
             ].map((item, i) => (
               <div key={i} className="bg-white p-10 rounded-[3rem] border border-gray-100 shadow-sm hover:shadow-xl transition-all hover:-translate-y-2">
                 <div className="w-16 h-16 bg-gray-50 rounded-2xl flex items-center justify-center mb-6">
@@ -124,13 +123,10 @@ const B2BPage = () => {
               <div className="flex-1">
                  <h2 className="text-[11px] font-black uppercase text-primary tracking-[0.4em] mb-4">Case Study</h2>
                  <h3 className="text-4xl font-black text-gray-900 tracking-tighter leading-tight mb-8">
-                    글로벌 IT 기업 N사의 <br />
-                    창의적 오피스 프로젝트
+                    {t('b2b.case_title')}
                  </h3>
                  <p className="text-gray-500 text-lg leading-relaxed font-medium mb-10">
-                    획일화된 사무 공간에 유동성을 부여하기 위해 ArtLink의 정기 렌탈 서비스를 도입했습니다. 
-                    3개월마다 교체되는 작품들은 구성원들에게 새로운 영감을 제공하며, 
-                    WebAR을 통한 사전 배치 확인으로 임원진의 높은 만족도를 이끌어냈습니다.
+                    {t('b2b.case_desc')}
                  </p>
                  <div className="grid grid-cols-2 gap-8 text-center sm:text-left">
                     <div>
@@ -174,8 +170,8 @@ const B2BPage = () => {
       <section className="py-32 bg-gray-900 text-white relative">
         <div className="container mx-auto max-w-3xl px-6 relative z-10">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-black tracking-tighter mb-4">비즈니스 상담 신청</h2>
-            <p className="text-gray-400 font-medium">내용을 남겨주시면 담당 큐레이터가 맞춤 제안서를 지참해 연락드립니다.</p>
+            <h2 className="text-4xl font-black tracking-tighter mb-4">{t('b2b.inquiry_title')}</h2>
+            <p className="text-gray-400 font-medium">{t('b2b.inquiry_subtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-8">
@@ -185,7 +181,7 @@ const B2BPage = () => {
                 <input 
                   type="text" required
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-primary transition-all font-bold"
-                  placeholder="회사명 또는 브랜드명"
+                  placeholder={t('b2b.form_company')}
                   value={formData.companyName}
                   onChange={(e) => setFormData({...formData, companyName: e.target.value})}
                 />
@@ -195,7 +191,7 @@ const B2BPage = () => {
                 <input 
                   type="text" required
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-primary transition-all font-bold"
-                  placeholder="담당자 성함"
+                  placeholder={t('b2b.form_manager')}
                   value={formData.managerName}
                   onChange={(e) => setFormData({...formData, managerName: e.target.value})}
                 />
@@ -208,7 +204,7 @@ const B2BPage = () => {
                 <input 
                   type="email" required
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-primary transition-all font-bold"
-                  placeholder="biz@company.com"
+                  placeholder={t('b2b.form_email')}
                   value={formData.email}
                   onChange={(e) => setFormData({...formData, email: e.target.value})}
                 />
@@ -218,7 +214,7 @@ const B2BPage = () => {
                 <input 
                   type="tel" required
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-primary transition-all font-bold"
-                  placeholder="010-0000-0000"
+                  placeholder={t('b2b.form_phone')}
                   value={formData.phone}
                   onChange={(e) => setFormData({...formData, phone: e.target.value})}
                 />
@@ -231,19 +227,19 @@ const B2BPage = () => {
                 <input 
                   type="text"
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-primary transition-all font-bold"
-                  placeholder="상담 대상 평수 (예: 100평)"
+                  placeholder={t('b2b.form_size')}
                   value={formData.spaceSize}
                   onChange={(e) => setFormData({...formData, spaceSize: e.target.value})}
                 />
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase tracking-widest text-primary">Budget Range</label>
+                <label className="text-[10px] font-black uppercase tracking-widest text-primary">{t('b2b.form_budget')}</label>
                 <select 
                   className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-primary transition-all font-bold appearance-none"
                   value={formData.budget}
                   onChange={(e) => setFormData({...formData, budget: e.target.value})}
                 >
-                  <option value="" className="bg-gray-900">상담 후 결정</option>
+                  <option value="" className="bg-gray-900">{t('b2b.form_budget_placeholder')}</option>
                   <option value="1M~3M" className="bg-gray-900">월 100~300만원</option>
                   <option value="3M~10M" className="bg-gray-900">월 300~1000만원</option>
                   <option value="10M+" className="bg-gray-900">월 1000만원 이상</option>
@@ -255,7 +251,7 @@ const B2BPage = () => {
               <label className="text-[10px] font-black uppercase tracking-widest text-primary">Requirement / Message</label>
               <textarea 
                 className="w-full bg-white/5 border border-white/10 rounded-2xl px-6 py-4 text-white focus:outline-none focus:border-primary transition-all font-bold min-h-[150px]"
-                placeholder="추가적으로 궁금한 점이나 요구 사항을 입력해주세요."
+                placeholder={t('b2b.form_message')}
                 value={formData.message}
                 onChange={(e) => setFormData({...formData, message: e.target.value})}
               />
@@ -266,7 +262,7 @@ const B2BPage = () => {
               disabled={isSubmitting}
               className="w-full bg-primary text-white py-6 rounded-3xl font-black text-lg hover:shadow-[0_20px_50px_rgba(0,207,187,0.3)] hover:-translate-y-1 transition-all disabled:opacity-50 disabled:translate-y-0"
             >
-              {isSubmitting ? <Loader2 className="animate-spin h-6 w-6 mx-auto" /> : '큐레이션 상담 신청하기'}
+              {isSubmitting ? <Loader2 className="animate-spin h-6 w-6 mx-auto" /> : t('b2b.form_submit')}
             </button>
           </form>
         </div>

@@ -2,7 +2,8 @@
 
 import React, { useState } from 'react';
 import ArtLinkModelViewer from '@/components/ar/ModelViewer';
-import { Palette, Box, Check } from 'lucide-react';
+import { Palette, Box, Check, ArrowLeft } from 'lucide-react';
+import Link from 'next/link';
 
 const ARTestPage = () => {
   // 테스트용 공개 원화 이미지들
@@ -33,6 +34,12 @@ const ARTestPage = () => {
   return (
     <div className="min-h-screen bg-gray-50 py-12">
       <div className="container mx-auto px-6">
+        <div className="mb-8">
+           <Link href="/explore" className="inline-flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">
+             <ArrowLeft className="h-4 w-4" />
+             Back to Explore
+           </Link>
+        </div>
         <header className="mb-12">
           <div className="inline-flex items-center gap-2 text-primary font-bold mb-2">
             <Palette className="h-5 w-5" />

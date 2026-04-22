@@ -5,11 +5,13 @@ import Link from 'next/link';
 import { signIn } from 'next-auth/react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { ArrowLeft, Mail, Lock, Sparkles, ArrowRight } from "lucide-react";
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 function LoginContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const { t } = useLanguage();
   
   const [formData, setFormData] = useState({
     email: '',
@@ -32,13 +34,13 @@ function LoginContent() {
       });
 
       if (result?.error) {
-        setError('이메일 또는 비밀번호가 올바르지 않습니다.');
+        setError(t('auth.error_invalid'));
       } else {
         router.push(callbackUrl);
         router.refresh();
       }
     } catch (err: any) {
-      setError('로그인 처리 중 오류가 발생했습니다.');
+      setError(t('auth.error_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -54,12 +56,12 @@ function LoginContent() {
             Welcome Back to ArtLink
             <Sparkles className="h-3 w-3 animate-pulse" />
           </div>
-          <h1 className="text-6xl font-black text-white leading-tight tracking-tighter mb-8">
-            다시 예술의 <br />
-            <span className="text-primary italic">중심으로</span>
+          <h1 className="text-6xl font-black text-white leading-tight tracking-tighter mb-8 whitespace-pre-line">
+            {t('auth.login_title')} <br />
+            <span className="text-primary italic">{t('auth.login_subtitle')}</span>
           </h1>
           <p className="text-gray-400 text-lg leading-relaxed max-w-md ml-auto font-medium">
-            공간을 채우는 영감, 다시 감상할 준비가 되셨나요? 로그인하여 당신만의 갤러리를 관리하세요.
+            {t('auth.login_desc')}
           </p>
         </div>
         {/* Animated Orbs */}
@@ -78,7 +80,7 @@ function LoginContent() {
           <div className="mb-12">
             <img src="/logo.svg" alt="ArtLink Logo" className="h-10 w-auto mb-8" />
             <h2 className="text-3xl font-black text-white tracking-tighter mb-2">Welcome Back</h2>
-            <p className="text-gray-500 font-bold tracking-tight">아트링크 계정으로 로그인해 주세요.</p>
+            <p className="text-gray-500 font-bold tracking-tight">ArtLink Login</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -87,7 +89,7 @@ function LoginContent() {
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                 <input
                   type="email"
-                  placeholder="이메일 주소"
+                  placeholder={t('auth.email')}
                   required
                   className="w-full bg-gray-901 border border-gray-800 text-white pl-14 pr-6 py-5 rounded-2xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-bold"
                   value={formData.email}
@@ -99,7 +101,7 @@ function LoginContent() {
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                 <input
                   type="password"
-                  placeholder="비밀번호"
+                  placeholder={t('auth.password')}
                   required
                   className="w-full bg-gray-901 border border-gray-800 text-white pl-14 pr-6 py-5 rounded-2xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-bold"
                   value={formData.password}
@@ -119,15 +121,15 @@ function LoginContent() {
               disabled={isLoading}
               className="w-full bg-primary hover:bg-[#00B8A6] text-white py-5 rounded-2xl font-black uppercase tracking-widest text-sm transition-all hover:shadow-[0_20px_50px_rgba(0,207,187,0.3)] disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center gap-3"
             >
-              {isLoading ? 'Authenticating...' : 'Sign In Now'}
+              {isLoading ? t('common.loading') : t('auth.login_now')}
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
           </form>
 
           <p className="mt-8 text-center text-gray-500 font-bold text-sm">
-            아직 계정이 없으신가요?{' '}
+            {t('auth.no_account')}{' '}
             <Link href="/auth/register" className="text-primary hover:underline underline-offset-4">
-              회원가입하기
+              {t('auth.register_now')}
             </Link>
           </p>
         </div>

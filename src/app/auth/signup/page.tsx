@@ -4,6 +4,7 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Mail, Lock, User, Sparkles, ArrowRight } from "lucide-react";
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function SignupPage() {
   });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const { t } = useLanguage();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,14 +62,13 @@ export default function SignupPage() {
         <div className="relative z-10 p-24">
           <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-primary/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/10">
             <Sparkles className="h-3 w-3 animate-pulse" />
-            Join the link to art
+            {t('auth.signup_subtitle')}
           </div>
-          <h1 className="text-6xl font-black text-white leading-tight tracking-tighter mb-8">
-            예술을 사랑하는 <br />
-            <span className="text-primary italic">당신의 첫 걸음</span>
+          <h1 className="text-6xl font-black text-white leading-tight tracking-tighter mb-8 whitespace-pre-line">
+            {t('hero.title')}
           </h1>
           <p className="text-gray-400 text-lg leading-relaxed max-w-md font-medium">
-            ArtLink 계정을 생성하고, 당신의 공간에 어울리는 최상의 작품들을 AR로 경험해 보세요.
+            {t('auth.signup_desc')}
           </p>
         </div>
         {/* Animated Orbs */}
@@ -80,13 +81,13 @@ export default function SignupPage() {
         <div className="w-full max-w-md">
           <Link href="/" className="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors mb-12 group">
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            <span className="text-xs font-black uppercase tracking-widest">Back to store</span>
+            <span className="text-xs font-black uppercase tracking-widest">{t('auth.back_to_store')}</span>
           </Link>
 
           <div className="mb-12">
             <img src="/logo.svg" alt="ArtLink Logo" className="h-10 w-auto mb-8" />
-            <h2 className="text-3xl font-black text-white tracking-tighter mb-2">Create Account</h2>
-            <p className="text-gray-500 font-bold tracking-tight">아트링크의 새로운 회원이 되어보세요.</p>
+            <h2 className="text-3xl font-black text-white tracking-tighter mb-2">{t('auth.signup_title')}</h2>
+            <p className="text-gray-500 font-bold tracking-tight">{t('auth.signup_subtitle')}</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -95,7 +96,7 @@ export default function SignupPage() {
                 <User className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                 <input
                   type="text"
-                  placeholder="이름"
+                  placeholder={t('auth.name')}
                   required
                   className="w-full bg-gray-901 border border-gray-800 text-white pl-14 pr-6 py-5 rounded-2xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-bold"
                   value={formData.name}
@@ -107,7 +108,7 @@ export default function SignupPage() {
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                 <input
                   type="email"
-                  placeholder="이메일 주소"
+                  placeholder={t('auth.email')}
                   required
                   className="w-full bg-gray-901 border border-gray-800 text-white pl-14 pr-6 py-5 rounded-2xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-bold"
                   value={formData.email}
@@ -119,7 +120,7 @@ export default function SignupPage() {
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                 <input
                   type="password"
-                  placeholder="비밀번호"
+                  placeholder={t('auth.password')}
                   required
                   className="w-full bg-gray-901 border border-gray-800 text-white pl-14 pr-6 py-5 rounded-2xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-bold"
                   value={formData.password}
@@ -131,7 +132,7 @@ export default function SignupPage() {
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                 <input
                   type="password"
-                  placeholder="비밀번호 확인"
+                  placeholder={t('auth.confirm_password')}
                   required
                   className="w-full bg-gray-901 border border-gray-800 text-white pl-14 pr-6 py-5 rounded-2xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-bold"
                   value={formData.confirmPassword}
@@ -151,15 +152,15 @@ export default function SignupPage() {
               disabled={isLoading}
               className="w-full bg-primary hover:bg-[#00B8A6] text-white py-5 rounded-2xl font-black uppercase tracking-widest text-sm transition-all hover:shadow-[0_20px_50px_rgba(0,207,187,0.3)] disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center gap-3"
             >
-              {isLoading ? 'Processing...' : 'Create Account'}
+              {isLoading ? t('common.loading') : t('auth.create_account')}
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
           </form>
 
           <p className="mt-8 text-center text-gray-500 font-bold text-sm">
-            이미 계정이 있으신가요?{' '}
+            {t('auth.already_have_account')}{' '}
             <Link href="/auth/login" className="text-primary hover:underline underline-offset-4">
-              로그인하기
+              {t('common.login')}
             </Link>
           </p>
         </div>

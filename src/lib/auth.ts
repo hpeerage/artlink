@@ -38,26 +38,38 @@ export const authOptions: NextAuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        return user;
+        // 인증 성공 시 필요한 필드만 명시적으로 구성하여 반환 (중요: id, role 필드 보장)
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.role,
+          image: user.image
+        };
       }
     })
   ],
   session: {
-    strategy: "jwt"
+    strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   pages: {
     signIn: "/auth/login",
   },
   callbacks: {
-    async token({ token, user }: any) {
+    async jwt({ token, user }: any) {
+      // 첫 로그인 시 user 객체가 전달됨
       if (user) {
+        console.log('Auth: Setting ID and ROLE into JWT from user object', { id: user.id, role: user.role });
         token.id = user.id;
         token.role = user.role;
       }
       return token;
     },
     async session({ session, token }: any) {
+      // JWT 토큰에 보관된 정보를 세션 객체로 전송
       if (session?.user) {
+        console.log('Auth: Syncing ID and ROLE from JWT to Session', { id: token.id, role: token.role });
         (session.user as any).id = token.id;
         (session.user as any).role = token.role;
       }

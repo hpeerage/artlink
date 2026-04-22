@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Header from '@/components/common/Header';
 import { 
   Instagram, 
   Globe, 
@@ -80,7 +79,6 @@ const ArtistPortfolioPage = ({ params }: { params: { id: string } }) => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white flex flex-col">
-        <Header />
         <div className="flex-1 flex items-center justify-center opacity-30">
           <Loader2 className="h-10 w-10 animate-spin text-primary" />
         </div>
@@ -94,7 +92,6 @@ const ArtistPortfolioPage = ({ params }: { params: { id: string } }) => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <Header />
 
       {/* Hero Profile Section */}
       <section className="bg-white border-b border-gray-100 pt-32 pb-20">

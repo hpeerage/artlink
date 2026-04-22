@@ -3,10 +3,12 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, Info, CheckCircle2, Box, ShieldCheck, Ruler, Loader2 } from 'lucide-react';
+import { ArrowLeft, Upload, Info, CheckCircle2, Box, ShieldCheck, Ruler, Loader2 } from 'lucide-center';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 const ArtworkUploadPage = () => {
   const router = useRouter();
+  const { t } = useLanguage();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     title: '',
@@ -130,7 +132,7 @@ const ArtworkUploadPage = () => {
         <div className="container mx-auto flex justify-between items-center">
           <button onClick={() => router.back()} className="flex items-center gap-2 text-gray-500 font-bold hover:text-black transition-colors">
             <ArrowLeft className="h-5 w-5" />
-            <span>BACK TO DASHBOARD</span>
+            <span>{t('auth.back_to_store')}</span>
           </button>
           <div className="flex gap-4">
              <div className="flex gap-2 bg-gray-50 p-1.5 rounded-xl border border-gray-100">
@@ -146,8 +148,8 @@ const ArtworkUploadPage = () => {
         {step === 1 && (
           <div className="space-y-12 animate-in slide-in-from-bottom-5 duration-500">
             <div>
-              <h1 className="text-4xl font-black text-gray-900 mb-4">새 작품 등록하기</h1>
-              <p className="text-gray-500 font-medium italic">작품의 고해상도 이미지를 선택해 주세요.</p>
+              <h1 className="text-4xl font-black text-gray-900 mb-4">{t('artist.upload_title')}</h1>
+              <p className="text-gray-500 font-medium italic">{t('artist.upload_subtitle')}</p>
             </div>
 
             <div className="border-4 border-dashed border-gray-100 rounded-[3rem] p-24 flex flex-col items-center text-center transition-all hover:bg-gray-50/50 hover:border-primary/20 group relative overflow-hidden">
@@ -160,10 +162,10 @@ const ArtworkUploadPage = () => {
               <div className="w-24 h-24 bg-primary/5 rounded-[2rem] flex items-center justify-center mb-8 border border-primary/10 group-hover:scale-110 transition-transform">
                 <Upload className="h-10 w-10 text-primary" />
               </div>
-              <h2 className="text-2xl font-black text-gray-900 mb-2">이미지 업로드 (PNG, JPG)</h2>
+              <h2 className="text-2xl font-black text-gray-900 mb-2">{t('artist.image_upload')} (PNG, JPG)</h2>
               <p className="text-gray-400 mb-8 max-w-sm">AR에서 실동감 있게 보여지기 위해 2K 이상의 고해상도 품질을 추천합니다.</p>
               <div className="bg-gray-900 text-white px-10 py-5 rounded-[2rem] font-black shadow-xl shadow-gray-200 group-hover:bg-primary transition-all">
-                파일 선택하기
+                {t('common.all')}
               </div>
             </div>
             
@@ -183,16 +185,16 @@ const ArtworkUploadPage = () => {
         {step === 2 && (
           <form onSubmit={handleFinish} className="space-y-12 animate-in slide-in-from-right-5 duration-500">
             <div>
-              <h1 className="text-4xl font-black text-gray-900 mb-4">상세 정보 입력</h1>
-              <p className="text-gray-500 font-medium italic">작품의 실제 물리적 규격과 가격을 설정합니다.</p>
+              <h1 className="text-4xl font-black text-gray-900 mb-4">{t('artist.upload_title')}</h1>
+              <p className="text-gray-500 font-medium italic">{t('artist.upload_subtitle')}</p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-10">
               {/* Left Group */}
               <div className="space-y-8">
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Artwork Title</label>
-                  <input name="title" value={formData.title} onChange={handleChange} required placeholder="작품명을 입력하세요" className="w-full bg-gray-50 border border-gray-100 p-5 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('artist.artwork_title')}</label>
+                  <input name="title" value={formData.title} onChange={handleChange} required placeholder={t('artist.artwork_title')} className="w-full bg-gray-50 border border-gray-100 p-5 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Artist Name</label>
@@ -200,11 +202,11 @@ const ArtworkUploadPage = () => {
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Sale Price (₩)</label>
+                    <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('artist.price_buy')}</label>
                     <input name="priceBuy" value={formData.priceBuy} onChange={handleChange} required placeholder="0" className="w-full bg-gray-50 border border-gray-100 p-5 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">Rental Price (₩/Month)</label>
+                    <label className="text-[10px] font-black text-primary uppercase tracking-widest ml-1">{t('artist.price_rental')}</label>
                     <input name="priceRental" value={formData.priceRental} onChange={handleChange} required placeholder="0" className="w-full bg-gray-50 border border-primary/20 p-5 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
                   </div>
                 </div>
@@ -214,7 +216,7 @@ const ArtworkUploadPage = () => {
               <div className="bg-primary/5 p-8 rounded-[2.5rem] border border-primary/10 shadow-sm space-y-8">
                 <div className="flex items-center gap-3 mb-2">
                   <Ruler className="h-6 w-6 text-primary" />
-                  <h3 className="text-xl font-black text-primary tracking-tighter">Real Scale Specification</h3>
+                  <h3 className="text-xl font-black text-primary tracking-tighter">{t('artist.dimensions')}</h3>
                 </div>
                 <p className="text-primary/60 text-xs font-bold leading-relaxed mb-6">
                   실제 작품의 가로/세로 길이를 입력해 주세요. 이 수치는 AR 체험 시 고객의 공간에 1:1 크기로 배치되는 기준이 됩니다.
@@ -222,12 +224,12 @@ const ArtworkUploadPage = () => {
                 
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-primary/60 uppercase tracking-widest">Width (mm)</label>
-                    <input name="width" value={formData.width} onChange={handleChange} required placeholder="가로" className="w-full bg-white border border-primary/10 p-5 rounded-2xl focus:ring-2 focus:ring-primary/40 outline-none transition-all" />
+                    <label className="text-[10px] font-black text-primary/60 uppercase tracking-widest">{t('artist.width')} (mm)</label>
+                    <input name="width" value={formData.width} onChange={handleChange} required placeholder={t('artist.width')} className="w-full bg-white border border-primary/10 p-5 rounded-2xl focus:ring-2 focus:ring-primary/40 outline-none transition-all" />
                   </div>
                   <div className="space-y-2">
-                    <label className="text-[10px] font-black text-primary/60 uppercase tracking-widest">Height (mm)</label>
-                    <input name="height" value={formData.height} onChange={handleChange} required placeholder="세로" className="w-full bg-white border border-primary/10 p-5 rounded-2xl focus:ring-2 focus:ring-primary/40 outline-none transition-all" />
+                    <label className="text-[10px] font-black text-primary/60 uppercase tracking-widest">{t('artist.height')} (mm)</label>
+                    <input name="height" value={formData.height} onChange={handleChange} required placeholder={t('artist.height')} className="w-full bg-white border border-primary/10 p-5 rounded-2xl focus:ring-2 focus:ring-primary/40 outline-none transition-all" />
                   </div>
                 </div>
                 
@@ -249,11 +251,11 @@ const ArtworkUploadPage = () => {
                 {isUploading ? (
                   <>
                     <Loader2 className="h-5 w-5 animate-spin" />
-                    업로드 중...
+                    {t('common.loading')}
                   </>
                 ) : (
                   <>
-                    작품 등록 및 프리뷰
+                    {t('artist.submit')}
                     <CheckCircle2 className="h-5 w-5" />
                   </>
                 )}

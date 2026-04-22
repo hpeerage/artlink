@@ -3,7 +3,8 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Filter, Search, Grid, List, ArrowRight, Heart, Loader2 } from 'lucide-react';
-import { useSession } from 'next-auth/react';
+import { useSession, signIn } from 'next-auth/react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import Header from '@/components/common/Header';
 
 interface Artwork {
@@ -18,12 +19,15 @@ interface Artwork {
 
 const ExplorePage = () => {
   const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [favorites, setFavorites] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [filter, setFilter] = useState<'All' | 'Modern' | 'Abstract' | 'Traditional' | 'Digital'>('All');
   const [searchQuery, setSearchQuery] = useState('');
   const [minPrice, setMinPrice] = useState('');
   const [maxPrice, setMaxPrice] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const { t } = useLanguage();
+  const { data: session } = useSession();
 
   const fetchArtworks = async () => {
     setIsLoading(true);
@@ -45,26 +49,68 @@ const ExplorePage = () => {
     }
   };
 
+  const fetchFavorites = async () => {
+    if (!session) return;
+    try {
+      const res = await fetch('/api/my/favorites');
+      if (res.ok) {
+        const data = await res.json();
+        setFavorites(data.map((f: any) => f.artworkId));
+      }
+    } catch (err) {
+      console.error('Error fetching favorites:', err);
+    }
+  };
+
   useEffect(() => {
     const timer = setTimeout(() => {
       fetchArtworks();
-    }, 500); // 디바운싱 추가
+    }, 500); // Debouncing
 
     return () => clearTimeout(timer);
   }, [filter, searchQuery, minPrice, maxPrice]);
 
-  const { data: session, status } = useSession();
+  useEffect(() => {
+    fetchFavorites();
+  }, [session]);
+
+  const toggleFavorite = async (artworkId: string, e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (!session) {
+      if (confirm(t('common.error_auth_required'))) signIn();
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/my/favorites', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ artworkId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        if (data.active) {
+          setFavorites(prev => [...prev, artworkId]);
+        } else {
+          setFavorites(prev => prev.filter(id => id !== artworkId));
+        }
+      }
+    } catch (err) {
+      console.error('Error toggling favorite:', err);
+    }
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <Header />
 
       <main className="container mx-auto px-6 py-12">
         {/* Filter Section */}
         <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-8">
           <div>
-            <h1 className="text-4xl font-black text-gray-900 mb-2">작품 탐색하기</h1>
-            <p className="text-gray-500 italic">Find your perfect piece of art for your space.</p>
+            <h1 className="text-4xl font-black text-gray-900 mb-2">{t('explore.title')}</h1>
+            <p className="text-gray-500 italic">{t('explore.subtitle')}</p>
           </div>
 
           <div className="flex flex-wrap items-center gap-3 w-full md:w-auto">
@@ -72,7 +118,7 @@ const ExplorePage = () => {
               <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input 
                 type="text" 
-                placeholder="작가나 작품명 검색..." 
+                placeholder={t('explore.search_placeholder')} 
                 className="w-full bg-white border border-gray-100 py-4 pl-11 pr-4 rounded-3xl text-sm shadow-sm focus:ring-2 focus:ring-primary/20 transition-all outline-none"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
@@ -92,12 +138,12 @@ const ExplorePage = () => {
           <div className="bg-white p-8 rounded-[2rem] border border-gray-50 shadow-sm mb-10 animate-in fade-in slide-in-from-top-4 duration-300">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Min Price (Rental)</label>
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{t('artwork.width')} Rental (Min)</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₩</span>
                   <input 
                     type="number" 
-                    placeholder="최소 금액"
+                    placeholder={t('explore.filter_price_min')}
                     className="w-full bg-gray-50 border-none py-4 pl-10 pr-4 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-primary/20"
                     value={minPrice}
                     onChange={(e) => setMinPrice(e.target.value)}
@@ -105,12 +151,12 @@ const ExplorePage = () => {
                 </div>
               </div>
               <div className="space-y-3">
-                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">Max Price (Rental)</label>
+                <label className="text-[10px] font-black uppercase text-gray-400 tracking-widest">{t('artwork.height')} Rental (Max)</label>
                 <div className="relative">
                   <span className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 font-bold">₩</span>
                   <input 
                     type="number" 
-                    placeholder="최대 금액"
+                    placeholder={t('explore.filter_price_max')}
                     className="w-full bg-gray-50 border-none py-4 pl-10 pr-4 rounded-2xl text-sm outline-none focus:ring-2 focus:ring-primary/20"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(e.target.value)}
@@ -122,7 +168,7 @@ const ExplorePage = () => {
                   onClick={() => { setMinPrice(''); setMaxPrice(''); setFilter('All'); setSearchQuery(''); }}
                   className="w-full py-4 text-xs font-black text-gray-400 hover:text-primary transition-colors uppercase tracking-widest underline underline-offset-4"
                 >
-                  Clear All Filters
+                  {t('explore.clear_filters')}
                 </button>
               </div>
             </div>
@@ -141,7 +187,7 @@ const ExplorePage = () => {
                 : 'bg-white text-gray-500 border border-gray-100 hover:border-primary/30 hover:text-primary'
               }`}
             >
-              {cat === 'All' ? '전체 보기' : cat}
+              {cat === 'All' ? t('common.all') : cat}
             </button>
           ))}
         </div>
@@ -152,9 +198,9 @@ const ExplorePage = () => {
             <Loader2 className="h-10 w-10 animate-spin text-primary" />
             <p className="font-bold animate-pulse uppercase tracking-[0.2em] text-[10px]">Fetching Masterpieces...</p>
           </div>
-        ) : filteredArtworks.length > 0 ? (
+        ) : artworks.length > 0 ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filteredArtworks.map((art) => (
+            {artworks.map((art) => (
               <div key={art.id} className="group bg-white rounded-[2rem] overflow-hidden border border-gray-50 shadow-sm transition-all hover:shadow-2xl hover:-translate-y-2">
                 <div className="relative aspect-[4/5] overflow-hidden">
                   <img 
@@ -163,8 +209,11 @@ const ExplorePage = () => {
                     className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
                   />
                 <div className="absolute top-5 right-5 z-10">
-                  <button className="bg-white/90 backdrop-blur p-2.5 rounded-2xl shadow-lg text-gray-400 hover:text-red-500 transition-colors">
-                    <Heart className="h-5 w-5" />
+                  <button 
+                    onClick={(e) => toggleFavorite(art.id, e)}
+                    className={`backdrop-blur p-2.5 rounded-2xl shadow-lg transition-all ${favorites.includes(art.id) ? 'bg-red-500 text-white' : 'bg-white/90 text-gray-400 hover:text-red-500'}`}
+                  >
+                    <Heart className={`h-5 w-5 ${favorites.includes(art.id) ? 'fill-current' : ''}`} />
                   </button>
                 </div>
                 <div className="absolute inset-x-0 bottom-0 p-6 bg-gradient-to-t from-black/80 to-transparent translate-y-full group-hover:translate-y-0 transition-transform duration-500">
@@ -172,7 +221,7 @@ const ExplorePage = () => {
                     href={`/artwork/${art.id}`}
                     className="w-full bg-primary text-white py-4 rounded-2xl font-extrabold flex items-center justify-center gap-2 hover:bg-white hover:text-primary transition-all shadow-xl"
                   >
-                    AR 실물 크기 체험하기
+                    {t('artwork.arExperience')}
                     <ArrowRight className="h-5 w-5" />
                   </Link>
                 </div>
@@ -193,11 +242,11 @@ const ExplorePage = () => {
                 
                   <div className="flex items-center justify-between pt-6 border-t border-gray-50">
                     <div>
-                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-tighter">구매가</p>
+                      <p className="text-[10px] uppercase font-bold text-gray-400 tracking-tighter">{t('artwork.buy')}</p>
                       <p className="font-bold text-gray-900">₩{art.priceBuy?.toLocaleString()}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-[10px] uppercase font-bold text-primary tracking-tighter">정기 렌탈</p>
+                      <p className="text-[10px] uppercase font-bold text-primary tracking-tighter">{t('artwork.rental')}</p>
                       <p className="font-black text-primary text-xl">₩{art.priceRental?.toLocaleString()}<span className="text-xs font-medium ml-1">/월</span></p>
                     </div>
                   </div>
@@ -207,7 +256,7 @@ const ExplorePage = () => {
           </div>
         ) : (
           <div className="text-center py-24 bg-white rounded-[3rem] border border-gray-50">
-             <p className="text-gray-400 font-bold italic">검색 결과가 없습니다.</p>
+             <p className="text-gray-400 font-bold italic">{t('common.no_results')}</p>
           </div>
         )}
       </main>

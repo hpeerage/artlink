@@ -4,9 +4,11 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { ArrowLeft, Mail, Lock, User, Sparkles, ArrowRight, CheckCircle2 } from "lucide-react";
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 export default function RegisterPage() {
   const router = useRouter();
+  const { t } = useLanguage();
   
   const [formData, setFormData] = useState({
     name: '',
@@ -22,7 +24,7 @@ export default function RegisterPage() {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      setError('비밀번호가 일치하지 않습니다.');
+      setError(t('auth.error_confirm_password'));
       return;
     }
 
@@ -50,10 +52,10 @@ export default function RegisterPage() {
           router.push('/auth/login');
         }, 2000);
       } else {
-        setError(data.error || '회원가입에 실패했습니다.');
+        setError(data.error || t('auth.error_failed'));
       }
     } catch (err: any) {
-      setError('서버와의 통신 중 오류가 발생했습니다.');
+      setError(t('auth.error_failed'));
     } finally {
       setIsLoading(false);
     }
@@ -67,8 +69,8 @@ export default function RegisterPage() {
             <CheckCircle2 className="h-12 w-12" />
           </div>
           <div className="space-y-4">
-            <h1 className="text-4xl font-black text-white tracking-tighter">회원가입 완료!</h1>
-            <p className="text-gray-400 font-bold">잠시 후 로그인 페이지로 이동합니다.</p>
+            <h1 className="text-4xl font-black text-white tracking-tighter">{t('auth.success_register')}</h1>
+            <p className="text-gray-400 font-bold">Redirecting to Login...</p>
           </div>
         </div>
       </div>
@@ -85,12 +87,12 @@ export default function RegisterPage() {
             Join ArtLink Artist Community
             <Sparkles className="h-3 w-3 animate-pulse" />
           </div>
-          <h1 className="text-6xl font-black text-white leading-tight tracking-tighter mb-8">
-            당신의 예술을 <br />
-            <span className="text-primary italic">세상과 연결하세요</span>
+          <h1 className="text-6xl font-black text-white leading-tight tracking-tighter mb-8 whitespace-pre-line">
+            {t('auth.signup_title')} <br />
+            <span className="text-primary italic">{t('auth.signup_subtitle')}</span>
           </h1>
           <p className="text-gray-400 text-lg leading-relaxed max-w-md ml-auto font-medium">
-            ArtLink는 작가님의 작품을 1:1 리얼 스케일 AR로 구현하여 최상의 가치를 전달합니다. 지금 작가로 등록하고 새로운 가능성을 만나보세요.
+            {t('auth.signup_desc')}
           </p>
         </div>
         {/* Animated Orbs */}
@@ -103,13 +105,13 @@ export default function RegisterPage() {
         <div className="w-full max-w-md">
           <Link href="/auth/login" className="inline-flex items-center gap-2 text-gray-500 hover:text-white transition-colors mb-12 group">
             <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
-            <span className="text-xs font-black uppercase tracking-widest">Back to Login</span>
+            <span className="text-xs font-black uppercase tracking-widest">{t('auth.back_to_login')}</span>
           </Link>
 
           <div className="mb-12">
             <img src="/logo.svg" alt="ArtLink Logo" className="h-10 w-auto mb-8" />
-            <h2 className="text-3xl font-black text-white tracking-tighter mb-2">Create Account</h2>
-            <p className="text-gray-500 font-bold tracking-tight">ArtLink 작가 계정을 생성합니다.</p>
+            <h2 className="text-3xl font-black text-white tracking-tighter mb-2">{t('auth.signup_title')}</h2>
+            <p className="text-gray-500 font-bold tracking-tight">Create ArtLink Account</p>
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-6">
@@ -118,7 +120,7 @@ export default function RegisterPage() {
                 <User className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                 <input
                   type="text"
-                  placeholder="작가명 / 실명"
+                  placeholder={t('auth.name')}
                   required
                   className="w-full bg-gray-901 border border-gray-800 text-white pl-14 pr-6 py-5 rounded-2xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-bold"
                   value={formData.name}
@@ -130,7 +132,7 @@ export default function RegisterPage() {
                 <Mail className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                 <input
                   type="email"
-                  placeholder="이메일 주소"
+                  placeholder={t('auth.email')}
                   required
                   className="w-full bg-gray-901 border border-gray-800 text-white pl-14 pr-6 py-5 rounded-2xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-bold"
                   value={formData.email}
@@ -142,7 +144,7 @@ export default function RegisterPage() {
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                 <input
                   type="password"
-                  placeholder="비밀번호"
+                  placeholder={t('auth.password')}
                   required
                   className="w-full bg-gray-901 border border-gray-800 text-white pl-14 pr-6 py-5 rounded-2xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-bold"
                   value={formData.password}
@@ -154,7 +156,7 @@ export default function RegisterPage() {
                 <Lock className="absolute left-5 top-1/2 -translate-y-1/2 h-5 w-5 text-gray-500 group-focus-within:text-primary transition-colors" />
                 <input
                   type="password"
-                  placeholder="비밀번호 확인"
+                  placeholder={t('auth.confirm_password')}
                   required
                   className="w-full bg-gray-901 border border-gray-800 text-white pl-14 pr-6 py-5 rounded-2xl focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/20 transition-all font-bold"
                   value={formData.confirmPassword}
@@ -174,15 +176,15 @@ export default function RegisterPage() {
               disabled={isLoading}
               className="w-full bg-primary hover:bg-[#00B8A6] text-white py-5 rounded-2xl font-black uppercase tracking-widest text-sm transition-all hover:shadow-[0_20px_50px_rgba(0,207,187,0.3)] disabled:opacity-50 disabled:cursor-not-allowed group flex items-center justify-center gap-3"
             >
-              {isLoading ? 'Creating Account...' : 'Register Now'}
+              {isLoading ? t('common.loading') : t('auth.create_account')}
               <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
             </button>
           </form>
 
           <p className="mt-8 text-center text-gray-500 font-bold text-sm">
-            이미 계정이 있으신가요?{' '}
+            {t('auth.already_have_account')}{' '}
             <Link href="/auth/login" className="text-primary hover:underline underline-offset-4">
-              로그인하기
+              {t('common.login')}
             </Link>
           </p>
         </div>

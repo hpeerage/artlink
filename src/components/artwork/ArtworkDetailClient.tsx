@@ -21,7 +21,7 @@ import {
 } from 'lucide-react';
 import Link from 'next/link';
 import { useSession, signIn } from 'next-auth/react';
-import Header from '@/components/common/Header';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import ChatWindow from '@/components/common/ChatWindow';
 
 interface Artwork {
@@ -46,11 +46,14 @@ interface ArtworkDetailClientProps {
 const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) => {
   const router = useRouter();
   const { data: session } = useSession();
+  const { t } = useLanguage();
   const [showPayment, setShowPayment] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoadingSub, setIsLoadingSub] = useState(true);
   const [isFavorited, setIsFavorited] = useState(false);
+  const [isFollowing, setIsFollowing] = useState(false);
   const [isTogglingFav, setIsTogglingFav] = useState(false);
+  const [isTogglingFollow, setIsTogglingFollow] = useState(false);
   const [frameType, setFrameType] = useState<'wood' | 'white' | 'black'>('wood');
   const [snapshot, setSnapshot] = useState<string | null>(null);
   const [rentalType, setRentalType] = useState<'rental' | 'buy'>('rental');
@@ -107,6 +110,16 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
             const isFav = favorites.some((f: any) => f.artworkId === artwork.id);
             setIsFavorited(isFav);
           }
+
+          // 3. 작가 팔로우 확인
+          if (artwork.userId) {
+            const followRes = await fetch('/api/my/following');
+            if (followRes.ok) {
+              const following = await followRes.json();
+              const isFol = following.some((f: any) => f.followingId === artwork.userId);
+              setIsFollowing(isFol);
+            }
+          }
         } catch (err) {
           console.error('Error checking status:', err);
         } finally {
@@ -114,7 +127,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
         }
       }
 
-      // 3. 리뷰 데이터 로드 (로그인 여부와 상관없이)
+      // 4. 리뷰 데이터 로드
       try {
         const revRes = await fetch(`/api/reviews?artworkId=${artwork.id}`);
         if (revRes.ok) {
@@ -129,11 +142,11 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
     };
 
     checkStatus();
-  }, [artwork.id, session]);
+  }, [artwork.id, artwork.userId, session]);
 
   const handleFavoriteClick = async () => {
     if (!session) {
-      if (confirm('관심 작품 등록을 위해 로그인이 필요합니다.')) signIn();
+      if (confirm(t('common.error_auth_required'))) signIn();
       return;
     }
 
@@ -154,6 +167,32 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
       console.error('Error toggling favorite:', err);
     } finally {
       setIsTogglingFav(false);
+    }
+  };
+
+  const handleFollowClick = async () => {
+    if (!session) {
+      if (confirm(t('common.error_auth_required'))) signIn();
+      return;
+    }
+
+    if (isTogglingFollow || !artwork.userId) return;
+    setIsTogglingFollow(true);
+
+    try {
+      const res = await fetch('/api/my/follow', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ followingId: artwork.userId }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        setIsFollowing(data.status === 'followed');
+      }
+    } catch (err) {
+      console.error('Error toggling follow:', err);
+    } finally {
+      setIsTogglingFollow(false);
     }
   };
 
@@ -189,7 +228,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
 
   const handleRentalClick = () => {
     if (!session) {
-      if (confirm('렌탈 신청을 위해 로그인이 필요합니다. 로그인 페이지로 이동할까요?')) {
+      if (confirm(t('common.error_auth_required'))) {
         signIn();
       }
       return;
@@ -199,12 +238,11 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
       
       <div className="container mx-auto px-6 pt-8 flex justify-between items-center">
         <Link href="/explore" className="flex items-center gap-2 text-xs font-black text-gray-400 uppercase tracking-widest hover:text-gray-900 transition-colors">
           <ArrowLeft className="h-4 w-4" />
-          Back to list
+          {t('common.back_to_list')}
         </Link>
       </div>
 
@@ -245,9 +283,9 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
 
             <div className="grid grid-cols-3 gap-4 mt-6">
                {[
-                 { label: 'Width', value: `${artwork.widthMm}mm` },
-                 { label: 'Height', value: `${artwork.heightMm}mm` },
-                 { label: 'Format', value: '3D/AR Ready' }
+                 { label: t('artwork.width'), value: `${artwork.widthMm}mm` },
+                 { label: t('artwork.height'), value: `${artwork.heightMm}mm` },
+                 { label: t('artwork.format'), value: '3D/AR Ready' }
                ].map((spec, i) => (
                  <div key={i} className="bg-gray-50 p-6 rounded-3xl text-center">
                     <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">{spec.label}</p>
@@ -265,22 +303,37 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                   <div className="h-px flex-1 bg-gray-100"></div>
                </div>
                <h1 className="text-5xl font-black text-gray-900 leading-none mb-4 tracking-tighter">{artwork.title}</h1>
-               <div className="flex items-center gap-4">
-                  <div className="flex items-center gap-3 group cursor-pointer" onClick={() => setIsChatOpen(true)}>
-                    <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center font-black text-gray-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                      {artwork.artist[0]}
+                  <div className="flex items-center gap-3 group">
+                    <div className="cursor-pointer flex items-center gap-3" onClick={() => setIsChatOpen(true)}>
+                      <div className="w-10 h-10 bg-gray-50 rounded-full flex items-center justify-center font-black text-gray-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                        {artwork.artist[0]}
+                      </div>
+                      <div>
+                        <p className="text-sm font-black text-gray-900 group-hover:text-primary transition-colors">{artwork.artist}</p>
+                        <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">{t('artwork.artist_consult')} →</p>
+                      </div>
                     </div>
-                    <div>
-                      <p className="text-sm font-black text-gray-900 group-hover:text-primary transition-colors">{artwork.artist}</p>
-                      <p className="text-[10px] text-gray-400 font-bold uppercase tracking-tighter">작가에게 상담하기 →</p>
-                    </div>
+                    
+                    {session?.user && (session.user as any).id !== artwork.userId && (
+                      <button 
+                        onClick={handleFollowClick}
+                        disabled={isTogglingFollow}
+                        className={`ml-2 px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                          isFollowing 
+                          ? 'bg-gray-100 text-gray-400 hover:bg-gray-200' 
+                          : 'bg-primary/10 text-primary hover:bg-primary hover:text-white'
+                        }`}
+                      >
+                        {isFollowing ? 'Following' : 'Follow'}
+                      </button>
+                    )}
                   </div>
                   <button 
                     onClick={fetchAiDocent}
                     className="ml-auto flex items-center gap-2 bg-gradient-to-r from-primary to-blue-500 text-white px-5 py-2.5 rounded-2xl text-[10px] font-black uppercase tracking-widest shadow-lg shadow-primary/20 hover:scale-105 transition-all active:scale-95"
                   >
                     <Sparkles className="h-4 w-4" />
-                    AI Docent Guide
+                    {t('artwork.aiDocent')}
                   </button>
                </div>
             </div>
@@ -290,7 +343,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                   {artwork.description}
                 </p>
                 <div className="pt-6 border-t border-gray-200">
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">Select Frame Material</p>
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-4">{t('artwork.select_frame')}</p>
                   <div className="flex gap-3">
                     {[
                       { id: 'wood', label: 'Classic Wood', color: '#6B4423' },
@@ -337,14 +390,14 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                       onClick={handleRentalClick}
                       className="bg-gray-900 text-white py-6 rounded-[2rem] font-black text-sm hover:bg-primary transition-all active:scale-95 shadow-2xl shadow-gray-200"
                     >
-                      정기 렌탈 신청하기
+                      {t('artwork.rental')}
                     </button>
                     <button 
                       onClick={() => setIsChatOpen(true)}
                       className="bg-white border-2 border-gray-100 text-gray-900 py-6 rounded-[2rem] font-black text-sm hover:border-primary hover:text-primary transition-all active:scale-95 flex items-center justify-center gap-2"
                     >
                       <MessageSquare className="h-5 w-5" />
-                      작가 문의
+                      {t('artwork.artist_consult')}
                     </button>
                   </div>
                 </div>
@@ -353,39 +406,39 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                   <div className="w-16 h-16 bg-green-100 text-green-500 rounded-full flex items-center justify-center mb-4">
                     <CheckCircle2 className="h-10 w-10" />
                   </div>
-                  <h3 className="text-2xl font-black text-green-900 mb-2">구독 중인 작품입니다</h3>
-                  <p className="text-green-700 text-sm mb-6">마이페이지에서 구독 상태를 관리할 수 있습니다.</p>
-                  <Link href="/my" className="text-green-900 font-bold underline">구독 정보 확인하기</Link>
+                  <h3 className="text-2xl font-black text-green-900 mb-2">{t('artwork.subscribed')}</h3>
+                  <p className="text-green-700 text-sm mb-6">{t('artwork.go_to_my')}</p>
+                  <Link href="/my" className="text-green-900 font-bold underline">{t('common.mypage')}</Link>
                 </div>
               )}
 
               <section className="pt-10 border-t border-gray-100">
                 <h3 className="font-black text-gray-900 mb-6 uppercase tracking-widest text-xs flex items-center gap-2">
                   <div className="w-1 h-4 bg-primary"></div>
-                  Service Comparison
+                  {t('artwork.comparison')}
                 </h3>
                 <div className="overflow-hidden rounded-3xl border border-gray-100 shadow-sm mb-10 text-xs">
                   <table className="w-full text-left">
                     <thead className="bg-gray-50 font-black text-gray-400 uppercase tracking-tighter">
                       <tr>
-                        <th className="px-6 py-4">Benefit Items</th>
-                        <th className="px-6 py-4">Rental</th>
-                        <th className="px-6 py-4">Purchase</th>
+                        <th className="px-6 py-4">{t('artwork.benefit_item')}</th>
+                        <th className="px-6 py-4">{t('artwork.rental')}</th>
+                        <th className="px-6 py-4">{t('artwork.buy')}</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-50 font-bold">
                       <tr>
-                        <td className="px-6 py-4 text-gray-500">Initial Cost</td>
+                        <td className="px-6 py-4 text-gray-500">{t('artwork.initial_cost')}</td>
                         <td className="px-6 py-4 text-primary">₩{artwork.price_rental?.toLocaleString()}</td>
                         <td className="px-6 py-4">₩{artwork.price_buy?.toLocaleString()}</td>
                       </tr>
                       <tr>
-                        <td className="px-6 py-4 text-gray-500">Style Change</td>
+                        <td className="px-6 py-4 text-gray-500">{t('artwork.style_change')}</td>
                         <td className="px-6 py-4 text-secondary">Free (Every 3mo)</td>
                         <td className="px-6 py-4">N/A</td>
                       </tr>
                       <tr>
-                        <td className="px-6 py-4 text-gray-500">Maintenance</td>
+                        <td className="px-6 py-4 text-gray-500">{t('artwork.maintenance')}</td>
                         <td className="px-6 py-4 text-secondary">Pro Support</td>
                         <td className="px-6 py-4">Self</td>
                       </tr>
@@ -402,8 +455,8 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
         <div className="container mx-auto px-6 max-w-5xl">
           <div className="flex justify-between items-end mb-12">
             <div>
-               <span className="text-[10px] font-black uppercase text-primary tracking-widest mb-2 block">Collector Reviews</span>
-               <h2 className="text-4xl font-black text-gray-900 tracking-tight">컬렉터들의 생생한 체험기</h2>
+               <span className="text-[10px] font-black uppercase text-primary tracking-widest mb-2 block">{t('artwork.reviews')}</span>
+               <h2 className="text-4xl font-black text-gray-900 tracking-tight">{t('artwork.review_subtitle')}</h2>
             </div>
             {reviews.length > 0 && (
               <div className="text-right">
@@ -413,7 +466,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                 <div className="flex gap-0.5 text-amber-400 justify-end mb-2">
                   {[...Array(5)].map((_, i) => <Heart key={i} className="h-4 w-4 fill-current" />)}
                 </div>
-                <p className="text-xs font-bold text-gray-400">{reviews.length}개의 정성스러운 후기</p>
+                <p className="text-xs font-bold text-gray-400">{reviews.length} reviews</p>
               </div>
             )}
           </div>
@@ -451,7 +504,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
           ) : (
             <div className="bg-white p-20 rounded-[3rem] border border-gray-100 text-center text-gray-300">
                <MessageSquare className="h-10 w-10 mx-auto mb-4 opacity-20" />
-               <p className="text-sm font-bold italic">아직 작성된 리뷰가 없습니다. 첫 번째 리뷰어가 되어보세요!</p>
+               <p className="text-sm font-bold italic">{t('artwork.no_reviews')}</p>
             </div>
           )}
         </div>
@@ -462,7 +515,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
         <div className="text-2xl font-black tracking-tighter mb-4 opacity-20">
           ART<span className="text-primary italic">LINK</span>
         </div>
-        <p className="text-xs text-gray-400 font-bold">© 2026 ArtLink Platform. All rights reserved.</p>
+        <p className="text-xs text-gray-400 font-bold">© 2026 ArtLink Platform. {t('common.rights')}</p>
       </footer>
 
       {/* Modals */}
@@ -503,12 +556,12 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
               </div>
             </div>
             <div className="p-10 text-center">
-              <h4 className="text-2xl font-black text-gray-900 mb-2">공간에 배치된 작품을 공유해 보세요!</h4>
+              <h4 className="text-2xl font-black text-gray-900 mb-2">{t('artwork.share_ar')}</h4>
               <button 
                 onClick={() => handleShare('save')}
                 className="w-full bg-gray-900 text-white py-6 rounded-[2rem] font-black text-xl shadow-xl hover:bg-primary transition-all"
               >
-                이미지 저장 및 공유하기
+                {t('artwork.save_share')}
               </button>
             </div>
           </div>

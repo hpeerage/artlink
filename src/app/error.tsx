@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useEffect } from 'react';
-import Header from '@/components/common/Header';
 import { AlertTriangle, RotateCcw, Home } from 'lucide-react';
 import Link from 'next/link';
 
@@ -18,7 +17,7 @@ export default function Error({
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
+
       <div className="flex flex-col items-center justify-center py-40 px-6 text-center">
         <div className="w-20 h-20 bg-red-50 text-red-500 rounded-full flex items-center justify-center mb-8">
            <AlertTriangle className="h-10 w-10" />

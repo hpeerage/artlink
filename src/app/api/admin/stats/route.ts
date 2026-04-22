@@ -25,14 +25,23 @@ export async function GET(request: NextRequest) {
       sum: sql`sum(${payments.amount})` 
     }).from(payments).where(eq(payments.status, 'paid'));
 
-    // 3. 최근 결제 내역 (Top 5)
-    const recentPayments = await db.query.payments.findMany({
-      orderBy: [desc(payments.createdAt)],
-      limit: 5,
-      with: {
-        user: true,
-      } as any
-    });
+    // 3. 최근 결제 내역 (Top 5) - 표준 Select문으로 변경하여 안정성 확보
+    const recentPayments = await db.select({
+      id: payments.id,
+      amount: payments.amount,
+      status: payments.status,
+      createdAt: payments.createdAt,
+      user: {
+        id: users.id,
+        name: users.name,
+        email: users.email,
+        image: users.image
+      }
+    })
+    .from(payments)
+    .innerJoin(users, eq(payments.userId, users.id))
+    .orderBy(desc(payments.createdAt))
+    .limit(5);
 
     return NextResponse.json({
       totalUsers: userCount[0]?.count || 0,

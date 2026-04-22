@@ -47,11 +47,11 @@ export async function POST(request: NextRequest) {
       transactionId: `tx_${Date.now()}`,
     });
 
-    // 3. 실시간 알림 생성
+    // 3. 실시간 알림 생성 (알림 타입에 따라 클라이언트에서 다국어 처리 권장)
     await db.insert(notifications).values({
       userId,
       type: 'subscription',
-      message: `[구독 완료] 작품 정기 렌탈 구독이 시작되었습니다. 마이페이지에서 상세 내역을 확인하세요.`,
+      message: `[Subscription Complete] Your rental subscription has started. Check My Page for details.`,
       link: '/my',
     });
 

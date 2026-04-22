@@ -17,10 +17,11 @@ import {
   Building2, 
   Clock,
   ExternalLink,
-  MessageSquare
+  MessageSquare,
+  ArrowRight
 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
-import Header from '@/components/common/Header';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Artwork {
   id: string;
@@ -34,6 +35,7 @@ type TabType = 'rentals' | 'favorites' | 'following' | 'reviews' | 'b2b';
 
 const MyPage = () => {
   const { data: session } = useSession();
+  const { t } = useLanguage();
   const [subscriptions, setSubscriptions] = useState<any[]>([]);
   const [favorites, setFavorites] = useState<any[]>([]);
   const [following, setFollowing] = useState<any[]>([]);
@@ -73,7 +75,6 @@ const MyPage = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <Header />
 
       <main className="container mx-auto px-6 py-12 max-w-7xl">
         <div className="grid lg:grid-cols-4 gap-12">
@@ -90,12 +91,12 @@ const MyPage = () => {
             </div>
 
             {[
-              { id: 'rentals', icon: Box, label: '내 렌탈/구독', active: activeTab === 'rentals' },
-              { id: 'favorites', icon: Heart, label: '관심 작품', active: activeTab === 'favorites' },
-              { id: 'following', icon: Users, label: '팔로우 작가', active: activeTab === 'following' },
-              { id: 'reviews', icon: MessageSquare, label: '내 리뷰 관리', active: activeTab === 'reviews' },
-              { id: 'b2b', icon: Building2, label: 'B2B 상담 현황', active: activeTab === 'b2b' },
-              { id: 'logout', icon: LogOut, label: '로그아웃', active: false },
+              { id: 'rentals', icon: Box, label: t('mypage.tab_rentals'), active: activeTab === 'rentals' },
+              { id: 'favorites', icon: Heart, label: t('mypage.tab_favorites'), active: activeTab === 'favorites' },
+              { id: 'following', icon: Users, label: t('mypage.tab_following'), active: activeTab === 'following' },
+              { id: 'reviews', icon: MessageSquare, label: t('mypage.tab_reviews'), active: activeTab === 'reviews' },
+              { id: 'b2b', icon: Building2, label: t('mypage.tab_b2b'), active: activeTab === 'b2b' },
+              { id: 'logout', icon: LogOut, label: t('common.logout'), active: false },
             ].map((item) => (
               <button
                 key={item.id}
@@ -124,15 +125,15 @@ const MyPage = () => {
             <section className="bg-gray-900 rounded-[3rem] p-10 text-white relative overflow-hidden shadow-2xl">
                <div className="relative z-10 flex flex-col md:flex-row justify-between gap-10">
                  <div>
-                    <h1 className="text-3xl font-black mb-2 tracking-tighter">ArtLink 컬렉터 대시보드</h1>
-                    <p className="text-gray-400 font-medium">당신의 공간에 어울리는 최적의 작품을 관리하세요.</p>
+                    <h1 className="text-3xl font-black mb-2 tracking-tighter">{t('mypage.title')}</h1>
+                    <p className="text-gray-400 font-medium">{t('mypage.subtitle')}</p>
                  </div>
                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-8">
                    {[
-                     { label: '구독 중', value: subscriptions.length },
-                     { label: '관심 작품', value: favorites.length },
-                     { label: '팔로잉', value: following.length },
-                     { label: '내 리뷰', value: reviews.length },
+                     { label: t('mypage.stat_subscribing'), value: subscriptions.length },
+                     { label: t('mypage.stat_favorites'), value: favorites.length },
+                     { label: t('mypage.stat_following'), value: following.length },
+                     { label: t('mypage.stat_reviews'), value: reviews.length },
                    ].map((stat, i) => (
                      <div key={i} className="text-center md:text-left">
                         <p className="text-[9px] font-black text-gray-500 uppercase tracking-widest mb-1">{stat.label}</p>
@@ -149,7 +150,7 @@ const MyPage = () => {
               {isLoading ? (
                 <div className="flex flex-col items-center justify-center py-40 text-gray-400 gap-4 opacity-50">
                    <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                   <p className="font-bold tracking-widest text-[10px] uppercase">Syncing Dashboard Data...</p>
+                   <p className="font-bold tracking-widest text-[10px] uppercase">{t('mypage.syncing')}</p>
                 </div>
               ) : (
                 <div className="animate-in fade-in duration-500">
@@ -157,7 +158,7 @@ const MyPage = () => {
                     <div className="space-y-6">
                       <h3 className="text-xl font-black text-gray-900 px-2 flex items-center gap-2">
                         <Clock className="h-5 w-5 text-primary" />
-                        구독 타임라인
+                        {t('mypage.timeline')}
                       </h3>
                       {subscriptions.length > 0 ? (
                         <div className="space-y-4">
@@ -169,13 +170,13 @@ const MyPage = () => {
                               <div className="flex-1 w-full text-center md:text-left">
                                 <div className="flex items-center justify-center md:justify-start gap-2 mb-2">
                                    <span className="px-3 py-1 bg-primary text-white text-[10px] font-black uppercase rounded-full">Active</span>
-                                   <span className="text-[10px] font-bold text-gray-400">{new Date(sub.createdAt).toLocaleDateString()} 시작</span>
+                                   <span className="text-[10px] font-bold text-gray-400">{new Date(sub.createdAt).toLocaleDateString()}</span>
                                 </div>
                                 <h4 className="text-xl font-black text-gray-900">{sub.artwork.title}</h4>
                                 <p className="text-sm text-gray-400 font-bold italic">{sub.artwork.artist}</p>
                               </div>
                               <div className="w-full md:w-auto pt-6 md:pt-0 md:pl-8 border-t md:border-t-0 md:border-l border-gray-50 flex flex-col items-center md:items-end">
-                                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">다음 결제 예정일</p>
+                                <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">{t('mypage.next_payment')}</p>
                                 <p className="text-lg font-black text-gray-900">{new Date(sub.nextPaymentDate).toLocaleDateString()}</p>
                                 <p className="text-sm font-bold text-primary mt-1">₩{sub.amount?.toLocaleString()}</p>
                               </div>
@@ -183,7 +184,7 @@ const MyPage = () => {
                           ))}
                         </div>
                       ) : (
-                        <EmptyState message="아직 구독 중인 작품이 없습니다. AR로 미리 공간을 연출해 보세요!" link="/explore" />
+                        <EmptyState message={t('mypage.empty_rentals')} link="/explore" />
                       )}
                     </div>
                   )}
@@ -195,7 +196,7 @@ const MyPage = () => {
                           <ArtworkCard key={fav.id} artwork={fav.artwork} />
                         ))
                       ) : (
-                        <div className="col-span-full"><EmptyState message="찜한 작품이 없습니다." /></div>
+                        <div className="col-span-full"><EmptyState message={t('mypage.empty_favorites')} /></div>
                       )}
                     </div>
                   )}
@@ -214,13 +215,13 @@ const MyPage = () => {
                              </div>
                              <div className="flex-1">
                                 <h4 className="font-black text-gray-900 text-lg">{f.following.name}</h4>
-                                <p className="text-xs text-gray-400 font-medium line-clamp-1">{f.following.bio || '작가 소개가 없습니다.'}</p>
+                                <p className="text-xs text-gray-400 font-medium line-clamp-1">{f.following.bio || 'Artist bio not available.'}</p>
                              </div>
                              <ArrowRight className="h-5 w-5 text-gray-200 group-hover:text-primary transition-colors" />
                           </Link>
                         ))
                       ) : (
-                        <div className="col-span-full"><EmptyState message="팔로우 중인 작가가 없습니다." /></div>
+                        <div className="col-span-full"><EmptyState message={t('mypage.empty_following')} /></div>
                       )}
                     </div>
                   )}
@@ -248,7 +249,7 @@ const MyPage = () => {
                            </div>
                          ))
                        ) : (
-                         <EmptyState message="작성한 리뷰가 없습니다." />
+                         <EmptyState message={t('mypage.empty_reviews')} />
                        )}
                     </div>
                   )}
@@ -270,7 +271,7 @@ const MyPage = () => {
                                        <span className="text-[10px] font-bold text-gray-400">ID: {inq.id.substring(0, 8)}</span>
                                     </div>
                                     <h4 className="text-xl font-black text-gray-900">{inq.companyName}</h4>
-                                    <p className="text-sm text-gray-400 font-medium">담당자: {inq.managerName}</p>
+                                    <p className="text-sm text-gray-400 font-medium">Manager: {inq.managerName}</p>
                                  </div>
                                  <div className="text-right">
                                     <p className="text-[10px] font-black text-gray-300 uppercase tracking-widest mb-1">Inquiry Date</p>
@@ -279,12 +280,12 @@ const MyPage = () => {
                               </div>
                               <div className="mt-6 pt-6 border-t border-gray-50 bg-gray-50/50 rounded-2xl p-6">
                                  <p className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2">Request Message</p>
-                                 <p className="text-sm font-medium text-gray-600 leading-relaxed italic">{inq.message || '요청 사항이 없습니다.'}</p>
+                                 <p className="text-sm font-medium text-gray-600 leading-relaxed italic">{inq.message || 'No specific requests.'}</p>
                               </div>
                            </div>
                          ))
                        ) : (
-                         <EmptyState message="접수된 B2B 문의 내역이 없습니다." link="/b2b" />
+                         <EmptyState message={t('mypage.empty_b2b')} link="/b2b" />
                        )}
                     </div>
                   )}
@@ -298,21 +299,24 @@ const MyPage = () => {
   );
 };
 
-const ArtworkCard = ({ artwork }: { artwork: any }) => (
-  <Link 
-    href={`/artwork/${artwork.id}`}
-    className="group bg-white rounded-[2rem] p-4 border border-gray-50 shadow-sm hover:shadow-xl transition-all"
-  >
-    <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 mb-4">
-      <img src={artwork.image_url} alt={artwork.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-    </div>
-    <div className="px-2 pb-2">
-      <h4 className="font-black text-gray-900 mb-1 truncate">{artwork.title}</h4>
-      <p className="text-xs text-gray-400 font-bold mb-3">{artwork.artist}</p>
-      <p className="text-[10px] font-black uppercase text-primary">₩{artwork.priceRental?.toLocaleString()} / mo</p>
-    </div>
-  </Link>
-);
+const ArtworkCard = ({ artwork }: { artwork: any }) => {
+  const { t } = useLanguage();
+  return (
+    <Link 
+      href={`/artwork/${artwork.id}`}
+      className="group bg-white rounded-[2rem] p-4 border border-gray-50 shadow-sm hover:shadow-xl transition-all"
+    >
+      <div className="aspect-[3/4] rounded-2xl overflow-hidden bg-gray-100 mb-4">
+        <img src={artwork.image_url} alt={artwork.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+      </div>
+      <div className="px-2 pb-2">
+        <h4 className="font-black text-gray-900 mb-1 truncate">{artwork.title}</h4>
+        <p className="text-xs text-gray-400 font-bold mb-3">{artwork.artist}</p>
+        <p className="text-[10px] font-black uppercase text-primary">₩{artwork.priceRental?.toLocaleString()} / mo</p>
+      </div>
+    </Link>
+  );
+};
 
 const EmptyState = ({ message, link }: { message: string, link?: string }) => (
   <div className="bg-white rounded-[3rem] p-24 border border-gray-50 shadow-sm text-center">

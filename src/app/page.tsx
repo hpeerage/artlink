@@ -4,11 +4,12 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { ArrowRight, Box, CreditCard, Layers, Smartphone, Sparkles, CheckCircle2 } from "lucide-react";
 import { useSession } from 'next-auth/react';
-import Header from '@/components/common/Header';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 import RecommendationsSection from '@/components/home/RecommendationsSection';
 
 export default function Home() {
   const { data: session, status } = useSession();
+  const { t } = useLanguage();
   const [featuredArtworks, setFeaturedArtworks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -31,7 +32,6 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-white">
-      <Header />
 
       <main>
         {/* Modern Hero Section */}
@@ -40,31 +40,27 @@ export default function Home() {
             <div className="relative z-10">
               <div className="mb-8 inline-flex items-center gap-2 rounded-full bg-primary/5 px-4 py-2 text-[10px] font-black uppercase tracking-widest text-primary border border-primary/10">
                 <Sparkles className="h-3 w-3 animate-pulse" />
-                Next Generation Art Platform
+                {t('hero.badge')}
               </div>
-              <h1 className="mb-8 text-6xl md:text-8xl font-black leading-[1.05] tracking-tighter text-gray-900">
-                예술을 <br />
-                <span className="text-primary">일상의 스케일</span>로 <br />
-                링크하다.
+              <h1 className="mb-8 text-6xl md:text-8xl font-black leading-[1.05] tracking-tighter text-gray-900 whitespace-pre-line">
+                {t('hero.title')}
               </h1>
-              <p className="mb-12 max-w-lg text-lg leading-relaxed text-gray-500 font-medium">
-                ArtLink는 WebAR 기술을 통해 작품의 감동을 그대로 전달합니다. 
-                1:1 실물 크기로 당신의 공간에 작품을 배치하고, 
-                합리적인 정기 렌탈로 소유의 부담을 덜어보세요.
+              <p className="mb-12 max-w-lg text-lg leading-relaxed text-gray-500 font-medium whitespace-pre-line">
+                {t('hero.subtitle')}
               </p>
               <div className="flex flex-wrap gap-5">
                 <Link
                   href="/explore"
                   className="inline-flex items-center gap-3 rounded-[2rem] bg-gray-900 px-10 py-5 text-lg font-black text-white transition-all hover:bg-primary hover:shadow-[0_20px_50px_rgba(0,207,187,0.3)] hover:-translate-y-1 shadow-xl shadow-gray-200"
                 >
-                  작품 탐색하기
+                  {t('hero.btn_explore')}
                   <ArrowRight className="h-6 w-6" />
                 </Link>
                 <Link
                   href="/ar"
                   className="inline-flex items-center gap-3 rounded-[2rem] bg-gray-50 border border-gray-100 px-10 py-5 text-lg font-black text-gray-900 transition-all hover:bg-white hover:border-primary/30"
                 >
-                  AR 체험기술 보기
+                  {t('hero.btn_ar')}
                 </Link>
               </div>
             </div>
@@ -100,8 +96,8 @@ export default function Home() {
                 <div className="max-w-2xl">
                   <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-primary mb-5">Featured Collection</h2>
                   <h3 className="text-5xl font-black text-gray-900 tracking-tighter leading-tight">
-                    공간의 가치를 높이는 <br />
-                    <span className="italic text-gray-400 font-medium">선별된 원화 컬렉션</span>
+                    Elevating Space Value <br />
+                    <span className="italic text-gray-400 font-medium">Curated Original Collection</span>
                   </h3>
                 </div>
                 <Link href="/explore" className="group flex items-center gap-3 text-sm font-black uppercase tracking-widest text-gray-900 border-b-2 border-gray-900 pb-2 transition-all hover:text-primary hover:border-primary">
@@ -162,19 +158,19 @@ export default function Home() {
               <div className="order-1 lg:order-2">
                 <h2 className="text-[11px] font-black uppercase tracking-[0.4em] text-primary mb-5">Our Technology</h2>
                 <h3 className="text-5xl font-black text-gray-900 tracking-tighter leading-tight mb-8">
-                  단순한 전시를 넘어, <br />
-                  <span className="text-primary italic">실감나는 가상의 가변성</span>
+                  Beyond exhibition, <br />
+                  <span className="text-primary italic">Immersive Virtual Scalability</span>
                 </h3>
                 <p className="text-gray-500 text-lg leading-relaxed mb-10 font-medium">
-                  ArtLink는 모델과 텍스처를 브라우저 단에서 실시간으로 결합합니다. 
-                  기존의 비싼 서버 연동 방식이 아닌, 사용자의 기기에서 즉시 처리되는 
-                  혁신적인 아키텍처로 딜레이 없는 AR 경험을 제공합니다.
+                  ArtLink combines models and textures in real-time on the browser.
+                  Instead of expensive server-side rendering, our innovative architecture
+                  processes everything on the user's device for a lag-free AR experience.
                 </p>
                 <div className="space-y-4">
                   {[
-                    '실시간 2D 이미지 -> 3D 텍스처 매핑 엔진',
-                    'ARCore / ARKit 기반 1:1 리얼 스케일링',
-                    '작가와의 1:1 실시간 상담 메시징 지원',
+                    'Real-time 2D Image to 3D Texture Mapping',
+                    'ARCore / ARKit based 1:1 Real Scaling',
+                    '1:1 Real-time Chat with Artists',
                   ].map((text, i) => (
                     <div key={i} className="flex items-center gap-3">
                       <CheckCircle2 className="h-5 w-5 text-primary" />
@@ -196,9 +192,8 @@ export default function Home() {
                <div className="text-3xl font-black tracking-tighter mb-8 bg-gradient-to-r from-white to-gray-400 bg-clip-text text-transparent">
                 ART<span className="text-primary italic">LINK</span>
               </div>
-              <p className="text-gray-400 max-w-sm font-medium">
-                예술과 기술의 결합으로 당신의 공간에 새로운 영감을 링크합니다. 
-                가장 쉬운 WebAR 기반 작품 전시 및 렌탈 서비스.
+              <p className="text-gray-400 max-w-sm font-medium whitespace-pre-line">
+                {t('common.footer_desc')}
               </p>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-16 uppercase tracking-widest text-[10px] font-black">
@@ -223,7 +218,7 @@ export default function Home() {
             </div>
           </div>
           <div className="pt-10 border-t border-gray-800 flex justify-between items-center text-[10px] font-bold text-gray-500 uppercase tracking-[0.2em]">
-            <p>© 2026 ARTLINK INC. ALL RIGHTS RESERVED.</p>
+            <p>© 2026 ARTLINK INC. {t('common.rights')}</p>
             <div className="flex gap-8">
               <p>Instagram</p>
               <p>Twitter</p>

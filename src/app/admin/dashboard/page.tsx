@@ -1,7 +1,6 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import Header from '@/components/common/Header';
 import { 
   BarChart3, 
   Users, 
@@ -22,9 +21,11 @@ import {
   Loader2
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 
 const AdminDashboard = () => {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<'overview' | 'b2b' | 'artworks'>('overview');
   const [b2bInquiries, setB2bInquiries] = useState<any[]>([]);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
@@ -64,16 +65,33 @@ const AdminDashboard = () => {
   };
 
   useEffect(() => {
-    fetchData();
-  }, []);
+    // 권한 체크 로직 추가
+    if (status === 'unauthenticated') {
+      router.push('/auth/login');
+    } else if (status === 'authenticated' && (session?.user as any)?.role !== 'admin') {
+      router.push('/');
+    } else if (status === 'authenticated') {
+      fetchData();
+    }
+  }, [status, session, router]);
 
   const handleSyncToSheets = async () => {
     setIsSyncing(true);
-    // Google Sheets 연동 시뮬레이션
-    setTimeout(() => {
-      alert('데이터가 Google Sheets "ArtLink_Master_Report" 시트로 성공적으로 동기화되었습니다!');
+    try {
+      const res = await fetch('/api/admin/sync-sheets', { method: 'POST' });
+      const data = await res.json();
+      
+      if (res.ok) {
+        alert('데이터가 Google Sheets로 성공적으로 동기화되었습니다!');
+      } else {
+        alert(`동기화 실패: ${data.error || data.details || '알 수 없는 오류'}`);
+      }
+    } catch (err) {
+      console.error('Sync error:', err);
+      alert('동기화 과정에서 네트워크 오류가 발생했습니다.');
+    } finally {
       setIsSyncing(false);
-    }, 2000);
+    }
   };
 
   const updateB2BStatus = async (id: string, status: string) => {
@@ -94,7 +112,6 @@ const AdminDashboard = () => {
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#F8FAFC]">
-        <Header />
         <div className="flex h-[80vh] items-center justify-center opacity-30 text-primary">
           <Loader2 className="h-10 w-10 animate-spin" />
         </div>
@@ -104,7 +121,6 @@ const AdminDashboard = () => {
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
-      <Header />
       
       <main className="container mx-auto px-6 py-12 max-w-7xl">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 mb-12">
@@ -121,10 +137,15 @@ const AdminDashboard = () => {
                 {isSyncing ? <Loader2 className="h-4 w-4 animate-spin" /> : <FileSpreadsheet className="h-4 w-4" />}
                 Sync to Google Sheets
              </button>
-             <button className="flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-2xl font-black text-xs hover:bg-primary transition-all shadow-xl shadow-gray-200">
+             <a 
+               href={`https://docs.google.com/spreadsheets/d/1vCsh-r15DId-X-g6B7SihXF25_tGvB2DCHuSj83C90s`} // 예시 ID, 실제로는 env 연동 가능
+               target="_blank"
+               rel="noopener noreferrer"
+               className="flex items-center gap-2 bg-gray-900 text-white px-6 py-3 rounded-2xl font-black text-xs hover:bg-primary transition-all shadow-xl shadow-gray-200"
+             >
                 <Share2 className="h-4 w-4" />
-                Report Share
-             </button>
+                View Master Sheet
+             </a>
           </div>
         </div>
 

@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Heart, Loader2, Sparkles, ArrowRight } from 'lucide-react';
 import { useSession } from 'next-auth/react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Artwork {
   id: string;
@@ -18,6 +19,7 @@ const RecommendationsSection = () => {
   const { data: session } = useSession();
   const [recommendations, setRecommendations] = useState<Artwork[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const { t } = useLanguage();
 
   useEffect(() => {
     const fetchRecommendations = async () => {
@@ -40,7 +42,7 @@ const RecommendationsSection = () => {
     return (
       <div className="py-24 flex flex-col items-center justify-center gap-4 opacity-30">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
-        <span className="text-[10px] font-black uppercase tracking-widest">Finding art you'll love...</span>
+        <span className="text-[10px] font-black uppercase tracking-widest">{t('recommendations.loading')}</span>
       </div>
     );
   }
@@ -54,12 +56,12 @@ const RecommendationsSection = () => {
           <div className="animate-in fade-in slide-in-from-left-4 duration-700">
             <div className="flex items-center gap-2 mb-4">
                <Sparkles className="h-4 w-4 text-primary fill-primary/10" />
-               <span className="text-[10px] font-black uppercase text-primary tracking-[0.3em]">Curated for You</span>
+               <span className="text-[10px] font-black uppercase text-primary tracking-[0.3em]">{t('recommendations.badge')}</span>
             </div>
-            <h2 className="text-4xl font-black text-gray-900 tracking-tight">취향 저격, 추천 컬렉션</h2>
+            <h2 className="text-4xl font-black text-gray-900 tracking-tight">{t('recommendations.title')}</h2>
           </div>
           <Link href="/explore" className="text-xs font-black text-gray-400 uppercase tracking-widest hover:text-primary transition-colors flex items-center gap-2">
-             전체 보기 <ArrowRight className="h-4 w-4" />
+             {t('recommendations.view_all')} <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
 

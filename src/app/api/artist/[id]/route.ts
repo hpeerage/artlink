@@ -10,10 +10,10 @@ import { authOptions } from '@/lib/auth';
  */
 export async function GET(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
-    const artistId = params.id;
+    const { id: artistId } = await params;
     const session = await getServerSession(authOptions);
     const myId = (session?.user as any)?.id;
 

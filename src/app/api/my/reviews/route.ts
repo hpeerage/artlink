@@ -24,7 +24,7 @@ export async function GET(request: NextRequest) {
           columns: {
             id: true,
             title: true,
-            image_url: true,
+            imageUrl: true,
           }
         }
       },

@@ -336,7 +336,6 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
                     {t('artwork.aiDocent')}
                   </button>
                </div>
-            </div>
               
             <div className="p-8 bg-gray-50 rounded-[2.5rem] border border-gray-100 mb-10">
                 <p className="text-gray-600 leading-relaxed text-lg mb-6">

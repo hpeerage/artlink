@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, Upload, Info, CheckCircle2, Box, ShieldCheck, Ruler, Loader2 } from 'lucide-center';
+import { ArrowLeft, Upload, Info, CheckCircle2, Box, ShieldCheck, Ruler, Loader2 } from 'lucide-react';
 import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 const ArtworkUploadPage = () => {

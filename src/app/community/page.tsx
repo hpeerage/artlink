@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Heart, MessageSquare, Share2, Loader2, Image as ImageIcon, ExternalLink } from 'lucide-react';
+import Link from 'next/link';
 
 const CommunityPage = () => {
   const [reviews, setReviews] = useState<any[]>([]);

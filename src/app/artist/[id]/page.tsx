@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { 
-  Instagram, 
+  Camera, 
   Globe, 
   Users, 
   Heart, 
@@ -29,7 +29,8 @@ interface ArtistProfile {
   isFollowing: boolean;
 }
 
-const ArtistPortfolioPage = ({ params }: { params: { id: string } }) => {
+const ArtistPortfolioPage = ({ params }: { params: Promise<{ id: string }> }) => {
+  const { id } = React.use(params);
   const { data: session } = useSession();
   const [data, setData] = useState<ArtistProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -37,7 +38,7 @@ const ArtistPortfolioPage = ({ params }: { params: { id: string } }) => {
 
   const fetchArtistData = async () => {
     try {
-      const res = await fetch(`/api/artist/${params.id}`);
+      const res = await fetch(`/api/artist/${id}`);
       if (res.ok) {
         const result = await res.json();
         setData(result);
@@ -51,7 +52,7 @@ const ArtistPortfolioPage = ({ params }: { params: { id: string } }) => {
 
   useEffect(() => {
     fetchArtistData();
-  }, [params.id, session]);
+  }, [id, session]);
 
   const handleFollow = async () => {
     if (!session) {
@@ -64,7 +65,7 @@ const ArtistPortfolioPage = ({ params }: { params: { id: string } }) => {
       const res = await fetch('/api/my/follow', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ followingId: params.id }),
+        body: JSON.stringify({ followingId: id }),
       });
       if (res.ok) {
         await fetchArtistData();
@@ -153,7 +154,7 @@ const ArtistPortfolioPage = ({ params }: { params: { id: string } }) => {
                   <div className="flex gap-4">
                      {artist.instagramUrl && (
                        <a href={artist.instagramUrl} target="_blank" rel="noreferrer" className="w-12 h-12 bg-pink-50 text-pink-500 rounded-2xl flex items-center justify-center hover:bg-pink-500 hover:text-white transition-all shadow-sm">
-                          <Instagram className="h-5 w-5" />
+                          <Camera className="h-5 w-5" />
                        </a>
                      )}
                      {artist.website && (

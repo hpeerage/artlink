@@ -10,9 +10,10 @@ import { authOptions } from '@/lib/auth';
  */
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
+    const { id } = await params;
     const session = await getServerSession(authOptions);
     const role = (session?.user as any)?.role;
 
@@ -27,7 +28,7 @@ export async function PATCH(
 
     const updated = await db.update(b2bInquiries)
       .set({ status })
-      .where(eq(b2bInquiries.id, params.id))
+      .where(eq(b2bInquiries.id, id))
       .returning();
 
     return NextResponse.json({ success: true, data: updated[0] });

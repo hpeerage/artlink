@@ -163,7 +163,7 @@ const ArtworkUploadPage = () => {
                 <Upload className="h-10 w-10 text-primary" />
               </div>
               <h2 className="text-2xl font-black text-gray-900 mb-2">{t('artist.image_upload')} (PNG, JPG)</h2>
-              <p className="text-gray-400 mb-8 max-w-sm">AR에서 실동감 있게 보여지기 위해 2K 이상의 고해상도 품질을 추천합니다.</p>
+              <p className="text-gray-400 mb-8 max-w-sm">{t('artist.image_upload_guide')}</p>
               <div className="bg-gray-900 text-white px-10 py-5 rounded-[2rem] font-black shadow-xl shadow-gray-200 group-hover:bg-primary transition-all">
                 {t('common.all')}
               </div>
@@ -172,10 +172,9 @@ const ArtworkUploadPage = () => {
             <div className="bg-orange-50/50 border border-orange-100 p-8 rounded-3xl flex gap-5">
               <Info className="h-6 w-6 text-orange-400 shrink-0 mt-1" />
               <div>
-                <h4 className="font-bold text-orange-900 mb-1">매핑 최적화 가이드</h4>
+                <h4 className="font-bold text-orange-900 mb-1">{t('artist.optimization_guide')}</h4>
                 <p className="text-sm text-orange-700 leading-relaxed">
-                  작품의 비율과 매핑될 액자 프레임의 비율이 다를 경우 이미지의 중심을 기준으로 크롭될 수 있습니다. 
-                  정확한 1:1 리얼 스케일을 위해 다음 단계에서 규격을 입력해 주세요.
+                  {t('artist.optimization_guide_desc')}
                 </p>
               </div>
             </div>
@@ -190,15 +189,14 @@ const ArtworkUploadPage = () => {
             </div>
 
             <div className="grid md:grid-cols-2 gap-10">
-              {/* Left Group */}
               <div className="space-y-8">
                 <div className="space-y-2">
                   <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('artist.artwork_title')}</label>
                   <input name="title" value={formData.title} onChange={handleChange} required placeholder={t('artist.artwork_title')} className="w-full bg-gray-50 border border-gray-100 p-5 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
                 </div>
                 <div className="space-y-2">
-                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">Artist Name</label>
-                  <input name="artist" value={formData.artist} onChange={handleChange} required placeholder="작가명을 입력하세요" className="w-full bg-gray-50 border border-gray-100 p-5 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
+                  <label className="text-[10px] font-black text-gray-400 uppercase tracking-widest ml-1">{t('auth.name')}</label>
+                  <input name="artist" value={formData.artist} onChange={handleChange} required placeholder={t('auth.name')} className="w-full bg-gray-50 border border-gray-100 p-5 rounded-2xl focus:ring-2 focus:ring-primary/20 outline-none transition-all" />
                 </div>
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
@@ -212,14 +210,13 @@ const ArtworkUploadPage = () => {
                 </div>
               </div>
 
-              {/* Right Group: Real-world Scale (IMPORTANT) */}
               <div className="bg-primary/5 p-8 rounded-[2.5rem] border border-primary/10 shadow-sm space-y-8">
                 <div className="flex items-center gap-3 mb-2">
                   <Ruler className="h-6 w-6 text-primary" />
                   <h3 className="text-xl font-black text-primary tracking-tighter">{t('artist.dimensions')}</h3>
                 </div>
                 <p className="text-primary/60 text-xs font-bold leading-relaxed mb-6">
-                  실제 작품의 가로/세로 길이를 입력해 주세요. 이 수치는 AR 체험 시 고객의 공간에 1:1 크기로 배치되는 기준이 됩니다.
+                  {t('artist.dimensions_guide')}
                 </p>
                 
                 <div className="grid grid-cols-2 gap-4">
@@ -270,20 +267,20 @@ const ArtworkUploadPage = () => {
                <CheckCircle2 className="h-16 w-16" />
             </div>
             <div>
-              <h1 className="text-5xl font-black text-gray-900 mb-4 leading-tight">작품 등록이 완료되었습니다!</h1>
+              <h1 className="text-5xl font-black text-gray-900 mb-4 leading-tight">{t('artist.upload_success')}</h1>
               <p className="text-gray-400 font-bold max-w-lg mx-auto">
-                이제 작가님만의 1:1 리얼 스케일 작품을 전 세계 사람들이 자신의 공간에서 감상할 수 있습니다.
+                {t('artist.upload_success_desc')}
               </p>
             </div>
 
             <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto pt-10">
               <Link href="/artist" className="flex flex-col items-center gap-4 p-8 rounded-[2.5rem] border border-gray-100 hover:bg-gray-50 transition-all group">
                 <Box className="h-8 w-8 text-gray-400 group-hover:text-primary transition-colors" />
-                <span className="font-black text-gray-900">대시보드로 돌아가기</span>
+                <span className="font-black text-gray-900">{t('artist.go_to_dashboard')}</span>
               </Link>
               <Link href={newArtworkId ? `/artwork/${newArtworkId}` : '/explore'} className="flex flex-col items-center gap-4 p-8 rounded-[2.5rem] bg-primary text-white shadow-2xl shadow-primary/30 hover:scale-105 transition-all">
                 <ShieldCheck className="h-8 w-8" />
-                <span className="font-black">게시된 작품 보러가기</span>
+                <span className="font-black">{t('artist.view_published')}</span>
               </Link>
             </div>
           </div>

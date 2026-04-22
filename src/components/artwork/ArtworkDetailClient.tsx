@@ -73,7 +73,7 @@ const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) =>
       const res = await fetch('/api/ai/docent', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ artworkId: artwork.id }),
+        body: JSON.stringify({ artworkId: artwork.id, lang: language }),
       });
       if (res.ok) {
         const data = await res.json();

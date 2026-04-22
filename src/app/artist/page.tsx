@@ -19,6 +19,7 @@ interface Artwork {
 
 const ArtistDashboard = () => {
   const { data: session, status } = useSession();
+  const { t } = useLanguage();
   const [artworks, setArtworks] = useState<Artwork[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -60,10 +61,10 @@ const ArtistDashboard = () => {
         
         <nav className="flex-1 px-4 space-y-2">
           {[
-            { icon: LayoutDashboard, label: 'Dashboard', active: true },
-            { icon: ImageIcon, label: 'My Gallery', active: false },
-            { icon: BarChart3, label: 'Analytics', active: false },
-            { icon: Settings, label: 'Settings', active: false },
+            { icon: LayoutDashboard, label: t('artist.dashboard'), active: true },
+            { icon: ImageIcon, label: t('artist.gallery'), active: false },
+            { icon: BarChart3, label: t('artist.analytics'), active: false },
+            { icon: Settings, label: t('artist.settings'), active: false },
           ].map((item, i) => (
             <button
               key={i}
@@ -83,7 +84,7 @@ const ArtistDashboard = () => {
             className="w-full flex items-center gap-3 px-4 py-3 text-gray-500 hover:text-red-400 transition-colors text-sm font-bold"
           >
             <LogOut className="h-5 w-5" />
-            Logout
+            {t('common.logout')}
           </button>
         </div>
       </aside>
@@ -92,25 +93,27 @@ const ArtistDashboard = () => {
       <main className="flex-1 ml-64 p-10">
         <header className="flex justify-between items-end mb-12">
           <div>
-            <h1 className="text-3xl font-black text-gray-900 mb-2">Welcome back, {session?.user?.name || 'Artist'}</h1>
-            <p className="text-gray-500 font-medium italic">당신의 예술적 세계를 1:1 리얼 스케일로 공유하세요.</p>
+            <h1 className="text-3xl font-black text-gray-900 mb-2">
+              {t('artist.welcome', { name: session?.user?.name || 'Artist' })}
+            </h1>
+            <p className="text-gray-500 font-medium italic">{t('artist.upload_subtitle')}</p>
           </div>
           <Link 
             href="/artist/upload"
             className="bg-primary text-white px-8 py-4 rounded-2xl font-black flex items-center gap-2 shadow-xl shadow-primary/20 hover:scale-105 transition-all active:scale-95"
           >
             <Plus className="h-5 w-5" />
-            새 작품 등록하기
+            {t('artist.new_upload')}
           </Link>
         </header>
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
           {[
-            { label: 'Total Works', value: artworks.length.toString(), color: 'text-blue-600' },
-            { label: 'Active Rentals', value: '0', color: 'text-green-600' },
-            { label: 'AR Placements', value: '124', color: 'text-purple-600' },
-            { label: 'Revenue (Month)', value: '₩0', color: 'text-gray-900' },
+            { label: t('artist.stat_works'), value: artworks.length.toString(), color: 'text-blue-600' },
+            { label: t('artist.stat_rentals'), value: '0', color: 'text-green-600' },
+            { label: t('artist.stat_ar'), value: '124', color: 'text-purple-600' },
+            { label: t('artist.stat_revenue'), value: '₩0', color: 'text-gray-900' },
           ].map((stat, i) => (
             <div key={i} className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm transition-all hover:shadow-md">
               <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-1">{stat.label}</p>
@@ -122,7 +125,7 @@ const ArtistDashboard = () => {
         {/* Works List */}
         <div className="bg-white rounded-[2.5rem] border border-gray-100 shadow-sm overflow-hidden">
           <div className="px-10 py-8 border-b border-gray-50 flex justify-between items-center">
-            <h3 className="text-xl font-black text-gray-900">내가 등록한 작품들</h3>
+            <h3 className="text-xl font-black text-gray-900">{t('artist.list_title')}</h3>
             <span className="text-xs font-bold text-gray-400 uppercase tracking-widest">{artworks.length} Pieces</span>
           </div>
           
@@ -130,17 +133,17 @@ const ArtistDashboard = () => {
             {isLoading ? (
               <div className="flex flex-col items-center justify-center py-24 text-gray-400 gap-4">
                 <Loader2 className="h-10 w-10 animate-spin text-primary" />
-                <p className="font-bold animate-pulse">Loading Artwork Data...</p>
+                <p className="font-bold animate-pulse">{t('mypage.syncing')}</p>
               </div>
             ) : artworks.length > 0 ? (
               <table className="w-full text-left">
                 <thead>
                   <tr className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    <th className="px-10 py-5">Artwork</th>
-                    <th className="px-6 py-5">Status</th>
-                    <th className="px-6 py-5">Rental/Price</th>
-                    <th className="px-6 py-5">AR Views</th>
-                    <th className="px-10 py-5 text-right">Actions</th>
+                    <th className="px-10 py-5">{t('artist.table_artwork')}</th>
+                    <th className="px-6 py-5">{t('artist.table_status')}</th>
+                    <th className="px-6 py-5">{t('artist.table_price')}</th>
+                    <th className="px-6 py-5">{t('artist.table_ar_views')}</th>
+                    <th className="px-10 py-5 text-right">{t('artist.table_actions')}</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-50">
@@ -160,7 +163,7 @@ const ArtistDashboard = () => {
                       <td className="px-6 py-6">
                         <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-green-50 text-green-500 text-[10px] font-black uppercase rounded-full">
                           <div className="w-1.5 h-1.5 bg-green-500 rounded-full"></div>
-                          Active
+                          {t('artist.status_active')}
                         </span>
                       </td>
                       <td className="px-6 py-6">
@@ -190,7 +193,7 @@ const ArtistDashboard = () => {
               </table>
             ) : (
               <div className="text-center py-24 text-gray-400">
-                <p className="font-bold italic">등록된 작품이 없습니다. 새로운 작품을 등록해 보세요!</p>
+                <p className="font-bold italic">{t('artist.empty_works')}</p>
               </div>
             )}
           </div>

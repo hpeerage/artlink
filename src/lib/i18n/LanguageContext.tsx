@@ -30,7 +30,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   // 경로를 기반으로 번역 텍스트를 가져오는 함수 (예: 'common.explore')
-  const t = (path: string) => {
+  const t = (path: string, args?: Record<string, string | number>) => {
     const keys = path.split('.');
     let current: any = (dictionaries as any)[language];
     
@@ -40,6 +40,12 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       } else {
         return path; // 번역을 찾지 못한 경우 경로 반환
       }
+    }
+    
+    if (typeof current === 'string' && args) {
+      Object.entries(args).forEach(([key, value]) => {
+        current = current.replace(`{${key}}`, String(value));
+      });
     }
     
     return current;

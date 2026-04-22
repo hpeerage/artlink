@@ -26,8 +26,9 @@ import { useRouter } from 'next/navigation';
 const AdminDashboard = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'b2b' | 'artworks'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'b2b' | 'artworks' | 'users'>('overview');
   const [b2bInquiries, setB2bInquiries] = useState<any[]>([]);
+  const [usersList, setUsersList] = useState<any[]>([]);
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
@@ -38,6 +39,10 @@ const AdminDashboard = () => {
       // B2B 문의 및 기본적인 분석 데이터 시뮬레이션
       const b2bRes = await fetch('/api/my/b2b-inquiries'); // 실제로는 admin 전역 조회 API 필요
       if (b2bRes.ok) setB2bInquiries(await b2bRes.json());
+      
+      // 사용자 목록 조회
+      const usersRes = await fetch('/api/admin/users');
+      if (usersRes.ok) setUsersList(await usersRes.json());
       
       // 분석 데이터 시뮬레이션 (실제 DB 집계 가능)
       setAnalyticsData({
@@ -91,6 +96,25 @@ const AdminDashboard = () => {
       alert('동기화 과정에서 네트워크 오류가 발생했습니다.');
     } finally {
       setIsSyncing(false);
+    }
+  };
+
+  const handleRoleChange = async (userId: string, newRole: string) => {
+    try {
+      const res = await fetch(`/api/admin/users/${userId}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: newRole }),
+      });
+      if (res.ok) {
+        alert('사용자 권한이 성공적으로 변경되었습니다.');
+        fetchData(); // 새로고침
+      } else {
+        const data = await res.json();
+        alert(`변경 실패: ${data.error}`);
+      }
+    } catch (err) {
+      console.error('Role update failed:', err);
     }
   };
 
@@ -174,7 +198,7 @@ const AdminDashboard = () => {
 
         {/* Tabs */}
         <div className="flex gap-10 border-b border-gray-100 mb-10 overflow-x-auto pb-4">
-           {['overview', 'b2b', 'artworks'].map((tab) => (
+           {['overview', 'b2b', 'artworks', 'users'].map((tab) => (
              <button
                key={tab}
                onClick={() => setActiveTab(tab as any)}
@@ -295,6 +319,66 @@ const AdminDashboard = () => {
                       )) : (
                         <tr>
                            <td colSpan={5} className="px-8 py-20 text-center text-gray-300 italic">No B2B leads registered yet.</td>
+                        </tr>
+                      )}
+                   </tbody>
+                </table>
+             </div>
+          </div>
+        )}
+
+        {activeTab === 'users' && (
+          <div className="bg-white rounded-[3.5rem] overflow-hidden border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-5 duration-700">
+             <div className="p-8 border-b border-gray-50 bg-gray-50/30">
+                <h3 className="text-lg font-black text-gray-900">User Role Management</h3>
+             </div>
+             <div className="overflow-x-auto">
+                <table className="w-full text-left">
+                   <thead className="bg-gray-50/50 text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                      <tr>
+                         <th className="px-8 py-6">User Info</th>
+                         <th className="px-8 py-6">Email</th>
+                         <th className="px-8 py-6">Joined Date</th>
+                         <th className="px-8 py-6">Current Role</th>
+                         <th className="px-8 py-6 text-right">Change Role</th>
+                      </tr>
+                   </thead>
+                   <tbody className="divide-y divide-gray-50 font-medium text-sm text-gray-600">
+                      {usersList.length > 0 ? usersList.map((user) => (
+                        <tr key={user.id} className="hover:bg-gray-50/30 transition-colors">
+                           <td className="px-8 py-6">
+                              <div className="flex items-center gap-3">
+                                 <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center text-xs font-black text-gray-400">
+                                    {user.name?.[0] || 'U'}
+                                 </div>
+                                 <span className="font-black text-gray-900">{user.name}</span>
+                              </div>
+                           </td>
+                           <td className="px-8 py-6">{user.email}</td>
+                           <td className="px-8 py-6 text-xs">{new Date(user.createdAt).toLocaleDateString()}</td>
+                           <td className="px-8 py-6">
+                              <span className={`text-[10px] font-black uppercase px-3 py-1 rounded-full ${
+                                user.role === 'admin' ? 'bg-red-50 text-red-500' :
+                                user.role === 'artist' ? 'bg-primary/10 text-primary' : 'bg-gray-100 text-gray-400'
+                              }`}>
+                                {user.role}
+                              </span>
+                           </td>
+                           <td className="px-8 py-6 text-right">
+                              <select 
+                                value={user.role}
+                                onChange={(e) => handleRoleChange(user.id, e.target.value)}
+                                className="bg-gray-50 border-none text-[10px] font-black uppercase rounded-xl px-4 py-2 focus:ring-0 cursor-pointer outline-none"
+                              >
+                                 <option value="user">User</option>
+                                 <option value="artist">Artist</option>
+                                 <option value="admin">Admin</option>
+                              </select>
+                           </td>
+                        </tr>
+                      )) : (
+                        <tr>
+                           <td colSpan={5} className="px-8 py-20 text-center text-gray-300 italic">No users found.</td>
                         </tr>
                       )}
                    </tbody>

@@ -2,7 +2,7 @@
   "regions": ["icn1"],
   "functions": {
     "src/app/api/**/*": {
-      "region": "icn1"
+      "regions": ["icn1"]
     }
   }
 }

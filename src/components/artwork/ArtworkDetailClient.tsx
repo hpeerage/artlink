@@ -46,7 +46,7 @@ interface ArtworkDetailClientProps {
 const ArtworkDetailClient: React.FC<ArtworkDetailClientProps> = ({ artwork }) => {
   const router = useRouter();
   const { data: session } = useSession();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const [showPayment, setShowPayment] = useState(false);
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isLoadingSub, setIsLoadingSub] = useState(true);

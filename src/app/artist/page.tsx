@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Plus, LayoutDashboard, ImageIcon, BarChart3, Settings, LogOut, ExternalLink, Box, Loader2 } from 'lucide-react';
 import { useSession, signOut } from 'next-auth/react';
+import { useLanguage } from '@/lib/i18n/LanguageContext';
 
 interface Artwork {
   id: string;

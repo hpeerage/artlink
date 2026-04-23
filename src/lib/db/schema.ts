@@ -292,3 +292,11 @@ export const analyticsRelations = relations(analytics, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// 12. 플랫폼 설정 테이블 (Settings)
+export const settings = sqliteTable("settings", {
+  id: text("id").primaryKey().$defaultFn(() => crypto.randomUUID()),
+  key: text("key").unique().notNull(),
+  value: text("value").notNull(), // JSON string 또는 단일 문자열
+  updatedAt: text("updated_at").default(sql`CURRENT_TIMESTAMP`).notNull(),
+});

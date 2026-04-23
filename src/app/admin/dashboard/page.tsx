@@ -18,7 +18,10 @@ import {
   FileSpreadsheet,
   Download,
   Share2,
-  Loader2
+  RefreshCcw,
+  Loader2,
+  Upload,
+  Image as ImageIcon
 } from 'lucide-react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -26,12 +29,15 @@ import { useRouter } from 'next/navigation';
 const AdminDashboard = () => {
   const { data: session, status } = useSession();
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<'overview' | 'b2b' | 'artworks' | 'users'>('overview');
+  const [activeTab, setActiveTab] = useState<'overview' | 'b2b' | 'artworks' | 'users' | 'settings'>('overview');
   const [b2bInquiries, setB2bInquiries] = useState<any[]>([]);
   const [usersList, setUsersList] = useState<any[]>([]);
+  const [config, setConfig] = useState<any>({});
   const [analyticsData, setAnalyticsData] = useState<any>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSyncing, setIsSyncing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isUploadingHero, setIsUploadingHero] = useState(false);
 
   const fetchData = async () => {
     setIsLoading(true);
@@ -43,6 +49,13 @@ const AdminDashboard = () => {
       // 사용자 목록 조회
       const usersRes = await fetch('/api/admin/users');
       if (usersRes.ok) setUsersList(await usersRes.json());
+
+      // 3. 설정 조회 (캐시 방지)
+      const settingsRes = await fetch(`/api/admin/settings?t=${Date.now()}`, { cache: 'no-store' });
+      if (settingsRes.ok) {
+        const settingsData = await settingsRes.json();
+        setConfig(settingsData);
+      }
       
       // 분석 데이터 시뮬레이션 (실제 DB 집계 가능)
       setAnalyticsData({
@@ -115,6 +128,89 @@ const AdminDashboard = () => {
       }
     } catch (err) {
       console.error('Role update failed:', err);
+    }
+  };
+
+  const handleSaveAllSettings = async (settingsMap: Record<string, string>) => {
+    setIsSaving(true);
+    try {
+      const res = await fetch('/api/admin/settings', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: settingsMap }),
+      });
+      if (res.ok) {
+        setConfig((prev: any) => ({ ...prev, ...settingsMap }));
+        alert('모든 설정이 성공적으로 저장되었습니다.');
+        return true;
+      }
+      return false;
+    } catch (err) {
+      console.error('Batch setting save failed:', err);
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleSaveSetting = async (key: string, value: string) => {
+    return await handleSaveAllSettings({ [key]: value });
+  };
+
+  const handleHeroUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    console.log('[AdminHero] Starting upload for file:', file.name);
+    setIsUploadingHero(true);
+    try {
+      // 1. Get Signature
+      const timestamp = Math.round(new Date().getTime() / 1000);
+      const paramsToSign = { timestamp, folder: 'artlink_platform' };
+      
+      const signRes = await fetch('/api/auth/cloudinary-sign', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ paramsToSign }),
+      });
+      
+      if (!signRes.ok) throw new Error('서명 생성 실패');
+      const { signature, apiKey, cloudName } = await signRes.json();
+      console.log('[AdminHero] Signature & Metadata received');
+
+      // 2. Upload to Cloudinary
+      const formData = new FormData();
+      formData.append('file', file);
+      formData.append('api_key', apiKey || '');
+      formData.append('timestamp', timestamp.toString());
+      formData.append('signature', signature);
+      formData.append('folder', 'artlink_platform');
+
+      const uploadRes = await fetch(
+        `https://api.cloudinary.com/v1_1/${cloudName || process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME}/image/upload`,
+        { method: 'POST', body: formData }
+      );
+      
+      if (uploadRes.ok) {
+        const data = await uploadRes.json();
+        console.log('[AdminHero] Cloudinary upload success:', data.secure_url);
+        const optimizedUrl = data.secure_url.replace('/upload/', '/upload/q_auto,f_auto/');
+        const success = await handleSaveSetting('hero_image_url', optimizedUrl);
+        if (success) {
+          // 로컬 상태 즉시 반영
+          setConfig((prev: any) => ({ ...prev, hero_image_url: optimizedUrl }));
+          alert('히어로 이미지가 성공적으로 업로드 및 저장되었습니다.');
+        }
+      } else {
+        const errorText = await uploadRes.text();
+        console.error('[AdminHero] Cloudinary upload failed:', errorText);
+        alert(`업로드 실패: ${errorText}`);
+      }
+    } catch (err: any) {
+      console.error('[AdminHero] Hero upload error:', err);
+      alert(`오류 발생: ${err.message}`);
+    } finally {
+      setIsUploadingHero(false);
     }
   };
 
@@ -198,7 +294,7 @@ const AdminDashboard = () => {
 
         {/* Tabs */}
         <div className="flex gap-10 border-b border-gray-100 mb-10 overflow-x-auto pb-4">
-           {['overview', 'b2b', 'artworks', 'users'].map((tab) => (
+           {['overview', 'b2b', 'artworks', 'users', 'settings'].map((tab) => (
              <button
                key={tab}
                onClick={() => setActiveTab(tab as any)}
@@ -383,6 +479,127 @@ const AdminDashboard = () => {
                       )}
                    </tbody>
                 </table>
+             </div>
+          </div>
+        )}
+
+        {activeTab === 'settings' && (
+          <div className="bg-white rounded-[3.5rem] overflow-hidden border border-gray-100 shadow-sm animate-in fade-in slide-in-from-bottom-5 duration-700 p-12">
+             <div className="max-w-4xl">
+                <h3 className="text-2xl font-black text-gray-900 mb-2">Platform Settings</h3>
+                <p className="text-gray-400 font-medium mb-12">메인 페이지의 히어로 이미지와 텍스트를 관리합니다.</p>
+
+                <div className="space-y-12">
+                   {/* Hero Image Section */}
+                   <div className="p-10 bg-gray-50 rounded-[2.5rem] border border-gray-100">
+                      <h4 className="text-sm font-black uppercase tracking-widest text-gray-400 mb-8">Hero Banner Configuration</h4>
+                      
+                      <div className="grid md:grid-cols-2 gap-10">
+                         <div className="space-y-6">
+                            <div>
+                               <label className="block text-[10px] font-black uppercase text-gray-400 mb-4">Hero Image</label>
+                               <div className="relative group">
+                                  <input 
+                                    type="file" 
+                                    accept="image/*"
+                                    onChange={handleHeroUpload}
+                                    className="absolute inset-0 opacity-0 cursor-pointer z-10"
+                                    disabled={isUploadingHero}
+                                  />
+                                  <div className={`w-full aspect-video rounded-2xl border-2 border-dashed flex flex-col items-center justify-center gap-3 transition-all ${
+                                    isUploadingHero ? 'bg-gray-100 border-gray-200' : 'bg-white border-gray-100 group-hover:border-primary/30 group-hover:bg-primary/5'
+                                  }`}>
+                                     {isUploadingHero ? (
+                                       <Loader2 className="h-8 w-8 text-primary animate-spin" />
+                                     ) : (
+                                       <>
+                                         <Upload className="h-8 w-8 text-gray-300 group-hover:text-primary transition-colors" />
+                                         <span className="text-xs font-black text-gray-400 group-hover:text-primary tracking-widest uppercase">Click to Upload</span>
+                                       </>
+                                     )}
+                                  </div>
+                               </div>
+                            </div>
+                            <div>
+                               <label className="block text-[10px] font-black uppercase text-gray-400 mb-2">Hero Title</label>
+                               <input 
+                                 type="text" 
+                                 value={config.hero_title || ''} 
+                                 onChange={(e) => setConfig({...config, hero_title: e.target.value})}
+                                 className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:border-primary transition-all"
+                               />
+                            </div>
+                            <div>
+                               <label className="block text-[10px] font-black uppercase text-gray-400 mb-2">Hero Subtitle (Description)</label>
+                               <textarea 
+                                 rows={2}
+                                 value={config.hero_subtitle || ''} 
+                                 onChange={(e) => setConfig({...config, hero_subtitle: e.target.value})}
+                                 className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:border-primary transition-all"
+                               />
+                            </div>
+                            <div className="grid grid-cols-2 gap-4">
+                               <div>
+                                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-2">Artwork Title (On Image)</label>
+                                  <input 
+                                    type="text" 
+                                    value={config.hero_artwork_title || ''} 
+                                    onChange={(e) => setConfig({...config, hero_artwork_title: e.target.value})}
+                                    className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:border-primary transition-all"
+                                    placeholder="정선 아리아 #08"
+                                  />
+                               </div>
+                               <div>
+                                  <label className="block text-[10px] font-black uppercase text-gray-400 mb-2">Artwork Subtitle (On Image)</label>
+                                  <input 
+                                    type="text" 
+                                    value={config.hero_artwork_subtitle || ''} 
+                                    onChange={(e) => setConfig({...config, hero_artwork_subtitle: e.target.value})}
+                                    className="w-full px-6 py-4 bg-white border border-gray-100 rounded-2xl text-sm font-bold focus:outline-none focus:border-primary transition-all"
+                                    placeholder="Featured Artist"
+                                  />
+                               </div>
+                            </div>
+                            <button 
+                              type="button"
+                              disabled={isSaving}
+                              onClick={() => {
+                                handleSaveAllSettings({
+                                  hero_title: config.hero_title,
+                                  hero_subtitle: config.hero_subtitle,
+                                  hero_artwork_title: config.hero_artwork_title,
+                                  hero_artwork_subtitle: config.hero_artwork_subtitle
+                                });
+                              }}
+                              className="bg-gray-900 text-white px-8 py-4 rounded-2xl font-black text-xs uppercase tracking-widest hover:bg-primary transition-all disabled:opacity-50"
+                            >
+                               {isSaving ? 'Saving...' : 'Save All Text Settings'}
+                            </button>
+                         </div>
+
+                         <div className="space-y-6">
+                            <label className="block text-[10px] font-black uppercase text-gray-400">Preview</label>
+                            <div className="relative aspect-video bg-gray-200 rounded-3xl overflow-hidden shadow-2xl border border-gray-100">
+                               {config.hero_image_url ? (
+                                 <img src={config.hero_image_url} alt="Hero Preview" className="w-full h-full object-cover" />
+                               ) : (
+                                 <div className="w-full h-full flex items-center justify-center text-gray-400 font-bold italic">No Image</div>
+                               )}
+                               {/* Main Content Overlay */}
+                               <div className="absolute inset-0 bg-black/30 flex flex-col justify-center px-10">
+                                  <h1 className="text-white text-xl font-black mb-1 line-clamp-2">{config.hero_title || 'Hero Title'}</h1>
+                                  <p className="text-white/70 text-[8px] font-medium max-w-[80%] line-clamp-2">{config.hero_subtitle || 'Hero Subtitle'}</p>
+                               </div>
+                               {/* Artwork Overlay (Bottom Left) */}
+                               <div className="absolute bottom-4 left-4 text-white">
+                                  <p className="text-[6px] font-black uppercase tracking-widest mb-0.5 opacity-80">{config.hero_artwork_subtitle || 'Featured Artist'}</p>
+                                  <h3 className="text-sm font-black">{config.hero_artwork_title || 'Artwork Title'}</h3>
+                               </div>
+                            </div>
+                         </div>
+                      </div>
+                   </div>
+                </div>
              </div>
           </div>
         )}

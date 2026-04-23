@@ -11,24 +11,51 @@ export default function Home() {
   const { data: session, status } = useSession();
   const { t } = useLanguage();
   const [featuredArtworks, setFeaturedArtworks] = useState<any[]>([]);
+  const [heroConfig, setHeroConfig] = useState<any>({
+    hero_image_url: "https://images.unsplash.com/photo-1544161515-41e734149581?q=80&w=1200&auto=format&fit=crop",
+    hero_title: t('hero.title'),
+    hero_subtitle: t('hero.subtitle'),
+    hero_artwork_title: "정선 아리아 #08",
+    hero_artwork_subtitle: "Featured Artist"
+  });
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const fetchArtworks = async () => {
+    const fetchData = async () => {
       try {
-        const response = await fetch('/api/artworks');
-        if (response.ok) {
-          const data = await response.json();
+        // 1. 작품 목록 조회
+        const artResponse = await fetch('/api/artworks');
+        if (artResponse.ok) {
+          const data = await artResponse.json();
           setFeaturedArtworks(data.slice(0, 3));
         }
+
+        // 2. 히어로 설정 조회 (캐시 방지 적용)
+        const settingsRes = await fetch(`/api/settings?t=${Date.now()}`, {
+          cache: 'no-store',
+          headers: {
+            'Pragma': 'no-cache',
+            'Cache-Control': 'no-cache'
+          }
+        });
+        if (settingsRes.ok) {
+          const config = await settingsRes.json();
+          setHeroConfig({
+            hero_image_url: config.hero_image_url || "https://images.unsplash.com/photo-1544161515-41e734149581?q=80&w=1200&auto=format&fit=crop",
+            hero_title: config.hero_title || t('hero.title'),
+            hero_subtitle: config.hero_subtitle || t('hero.subtitle'),
+            hero_artwork_title: config.hero_artwork_title || "정선 아리아 #08",
+            hero_artwork_subtitle: config.hero_artwork_subtitle || "Featured Artist"
+          });
+        }
       } catch (error) {
-        console.error('Failed to fetch artworks:', error);
+        console.error('Failed to fetch data:', error);
       } finally {
         setIsLoading(false);
       }
     };
-    fetchArtworks();
-  }, []);
+    fetchData();
+  }, [t]);
 
   return (
     <div className="min-h-screen bg-white">
@@ -43,10 +70,10 @@ export default function Home() {
                 {t('hero.badge')}
               </div>
               <h1 className="mb-8 text-6xl md:text-8xl font-black leading-[1.05] tracking-tighter text-gray-900 whitespace-pre-line">
-                {t('hero.title')}
+                {heroConfig.hero_title}
               </h1>
               <p className="mb-12 max-w-lg text-lg leading-relaxed text-gray-500 font-medium whitespace-pre-line">
-                {t('hero.subtitle')}
+                {heroConfig.hero_subtitle}
               </p>
               <div className="flex flex-wrap gap-5">
                 <Link
@@ -69,7 +96,7 @@ export default function Home() {
             <div className="relative">
               <div className="relative rounded-[3rem] overflow-hidden shadow-2xl scale-105 rotate-2 transition-transform hover:rotate-0 duration-700">
                 <img 
-                  src="https://images.unsplash.com/photo-1544161515-41e734149581?q=80&w=1200&auto=format&fit=crop" 
+                  src={heroConfig.hero_image_url} 
                   alt="Gallery Hero"
                   className="w-full h-[600px] object-cover"
                 />

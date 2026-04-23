@@ -102,8 +102,8 @@ export default function Home() {
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent"></div>
                 <div className="absolute bottom-10 left-10 text-white">
-                  <p className="text-xs font-black uppercase tracking-[0.3em] mb-2 opacity-80">Featured Artist</p>
-                  <h3 className="text-3xl font-black">정선 아리아 #08</h3>
+                  <p className="text-xs font-black uppercase tracking-[0.3em] mb-2 opacity-80">{heroConfig.hero_artwork_subtitle}</p>
+                  <h3 className="text-3xl font-black">{heroConfig.hero_artwork_title}</h3>
                 </div>
               </div>
               <div className="absolute -top-10 -right-10 w-40 h-40 bg-primary/20 rounded-full blur-3xl opacity-30"></div>
